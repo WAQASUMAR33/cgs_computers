@@ -37,7 +37,7 @@ export async function GET() {
         return NextResponse.json({
             server: "",
             port: "3306",
-            database: "liberty",
+            database: "u889453186_cgs_computers",
             username: "root",
             password: "",
         });
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         const config: DbConfig = {
             server: body.server?.trim() || "",
             port: body.port?.trim() || "3306",
-            database: body.database?.trim() || "liberty",
+            database: body.database?.trim() || "u889453186_cgs_computers",
             username: body.username?.trim() || "root",
             password: body.password ?? "",
         };

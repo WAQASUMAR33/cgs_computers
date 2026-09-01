@@ -193,8 +193,8 @@ export default function SalesPage() {
                                     <td className="px-6 py-4 font-medium">{sale.customer?.name || 'N/A'}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-3 py-1 rounded-none-none text-xs font-black uppercase tracking-widest ${sale.type === 'WHOLESALE'
-                                                ? 'bg-purple-500/10 text-purple-600 border border-purple-500/20'
-                                                : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
+                                            ? 'bg-purple-500/10 text-purple-600 border border-purple-500/20'
+                                            : 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                                             }`}>
                                             {sale.type}
                                         </span>
@@ -299,9 +299,9 @@ function reprintReceipt(sale: any) {
     <div class="container">
         <div class="header">
             <div style="display: flex; gap: 15px; align-items: center;">
-                <img src="${window.location.origin}/libertycollection.png" alt="Logo" style="height: 85px; object-fit: contain;" />
+                <img src="${window.location.origin}/libertycollection.png" alt="CGS Computers" style="height: 85px; object-fit: contain;" />
                 <div class="store-info">
-                    <h1>Liberty Kollection</h1>
+                    <h1>CGS Computers</h1>
                     <p>Chapai wali gali ,Committe Bazar , Mandi Bahauddin</p>
                     <p>0345 5754717 | 0546-506717</p>
                 </div>
@@ -335,11 +335,11 @@ function reprintReceipt(sale: any) {
             </thead>
             <tbody>
                 ${sale.items.map((item: any, i: number) => {
-                    const itemPrice = Number(item.price);
-                    const itemQty = Number(item.quantity);
-                    const itemDiscount = Number(item.discount || 0);
-                    const itemTotal = (itemPrice * itemQty) - itemDiscount;
-                    return `
+            const itemPrice = Number(item.price);
+            const itemQty = Number(item.quantity);
+            const itemDiscount = Number(item.discount || 0);
+            const itemTotal = (itemPrice * itemQty) - itemDiscount;
+            return `
                         <tr>
                             <td class="text-center">${i + 1}</td>
                             <td>${item.name}</td>
@@ -349,7 +349,7 @@ function reprintReceipt(sale: any) {
                             <td class="text-right">${itemTotal.toFixed(2)}</td>
                         </tr>
                     `;
-                }).join('')}
+        }).join('')}
             </tbody>
         </table>
 
@@ -402,7 +402,7 @@ function reprintReceipt(sale: any) {
 </head>
 <body>
     <div class="header">
-        <img src="${window.location.origin}/libertycollection.png" alt="Logo" style="height: 120px; margin-bottom: 5px;" />
+        <img src="${window.location.origin}/libertycollection.png" alt="CGS Computers" style="height: 120px; margin-bottom: 5px;" />
         <p>Chapai wali gali ,Committe Bazar , Mandi Bahauddin</p>
         <p>0345 5754717 | 0546-506717</p>
     </div>
@@ -424,11 +424,11 @@ function reprintReceipt(sale: any) {
         </thead>
         <tbody>
             ${sale.items.map((item: any) => {
-                const itemPrice = Number(item.price);
-                const itemQty = Number(item.quantity);
-                const itemDiscount = Number(item.discount || 0);
-                const itemTotal = (itemPrice * itemQty) - itemDiscount;
-                return `
+        const itemPrice = Number(item.price);
+        const itemQty = Number(item.quantity);
+        const itemDiscount = Number(item.discount || 0);
+        const itemTotal = (itemPrice * itemQty) - itemDiscount;
+        return `
                     <tr>
                         <td style="text-align: left; word-break: break-word;">${item.name}</td>
                         <td class="text-center">${itemQty}</td>
@@ -437,7 +437,7 @@ function reprintReceipt(sale: any) {
                         <td class="text-right">${itemTotal.toFixed(2)}</td>
                     </tr>
                 `;
-            }).join('')}
+    }).join('')}
         </tbody>
     </table>
     <div class="divider"></div>
@@ -586,7 +586,7 @@ function SaleDetailsModal({ sale, onClose }: { sale: any, onClose: () => void })
                         <Printer className="w-4 h-4" />
                         Reprint Receipt
                     </button>
-                    <button 
+                    <button
                         onClick={onClose}
                         className="px-6 py-3 rounded-none-none premium-gradient text-white font-bold hover:shadow-lg transition-all"
                     >

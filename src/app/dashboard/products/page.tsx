@@ -295,7 +295,7 @@ function BarcodeModal({ onClose, product }: { onClose: () => void, product: any 
                 </style>
             </head>
             <body>
-                <div class="logo">Liberty Collection</div>
+                <div class="logo">CGS Computers</div>
                 <div class="name">${printData.name}</div>
                 ${barcodeSvg}
                 <div class="price">RS ${Number(printData.price).toFixed(2)}</div>
@@ -370,7 +370,7 @@ function BarcodeModal({ onClose, product }: { onClose: () => void, product: any 
                     <div className="p-6 rounded-none-none bg-white border border-black/5 flex flex-col items-center justify-center gap-2" id="barcode-preview">
                         <img 
                             src="/libertycollection.png" 
-                            alt="Liberty Collection" 
+                            alt="CGS Computers" 
                             className="h-8 object-contain mb-1"
                         />
                         <p className="text-[10px] text-center max-w-[200px] truncate">{printData.name}</p>

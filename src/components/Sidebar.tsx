@@ -125,7 +125,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-base font-black tracking-tight leading-tight text-foreground group-hover:text-primary transition-colors">
-                            Liberty Kollection
+                            CGS Computers
                         </span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="w-2 h-2 rounded-none-none bg-emerald-500 animate-pulse" />

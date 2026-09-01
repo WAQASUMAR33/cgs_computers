@@ -219,7 +219,7 @@ function SupplierLedgerContent() {
             <body>
                 <div class="header">
                     <h1>SUPPLIER LEDGER STATEMENT</h1>
-                    <p>Liberty Kollection • Chapai wali gali, Committee Bazar, Mandi Bahauddin</p>
+                    <p>CGS Computers • Chapai wali gali, Committee Bazar, Mandi Bahauddin</p>
                 </div>
 
                 <div class="supplier-info">
@@ -276,7 +276,7 @@ function SupplierLedgerContent() {
                 </table>
 
                 <div class="footer">
-                    <p>This is a computer-generated supplier ledger statement from Liberty POS</p>
+                    <p>This is a computer-generated supplier ledger statement from CGS Computers POS</p>
                 </div>
 
                 <script>

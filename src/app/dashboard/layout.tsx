@@ -116,7 +116,7 @@ export default function DashboardLayout({
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs font-bold text-foreground/40 hidden sm:inline">
-                                        Liberty /
+                                        CGS Computers /
                                     </span>
                                     <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground truncate capitalize">
                                         {currentPage.label}

@@ -1,12 +1,12 @@
 @echo off
 setlocal
-title Liberty POS Launcher
+title CGS Computers POS Launcher
 
 :: Ensure we are in the correct directory
 cd /d "%~dp0"
 
 echo ==========================================
-echo      LIBERTY POS - SYSTEM LAUNCHER
+echo    CGS COMPUTERS POS - SYSTEM LAUNCHER
 echo ==========================================
 
 :: 1. Initialize Database Client
@@ -43,7 +43,7 @@ if %errorlevel% equ 0 (
     echo Server is already running.
 ) else (
     echo Starting server process...
-    start "Liberty POS Server" /min cmd /c "npm start"
+    start "CGS Computers POS Server" /min cmd /c "npm start"
     
     echo Waiting for server to initialize...
     timeout /t 5 >nul

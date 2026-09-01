@@ -1,5 +1,5 @@
 {
-  "name": "liberty-pos",
+  "name": "cgs-computers-pos",
   "version": "1.0.0",
   "private": true,
   "main": "electron/main.js",
@@ -14,9 +14,9 @@
     "electron:pack": "electron-builder --win --x64 --dir"
   },
   "build": {
-    "appId": "com.libertykollection.pos",
-    "productName": "Liberty Kollection POS",
-    "copyright": "Copyright © 2026 Liberty Kollection",
+    "appId": "com.cgscomputers.pos",
+    "productName": "CGS Computers POS",
+    "copyright": "Copyright © 2026 CGS Computers",
     "directories": {
       "output": "dist",
       "buildResources": "build-resources"
@@ -53,7 +53,7 @@
       "allowElevation": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Liberty POS",
+      "shortcutName": "CGS Computers POS",
       "installerHeader": "",
       "deleteAppDataOnUninstall": false
     }

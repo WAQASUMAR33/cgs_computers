@@ -52,9 +52,9 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center mb-4">
-                        <Image src="/logo1.png" alt="Liberty Kollection" width={120} height={120} className="drop-shadow-xl" priority />
+                        <Image src="/logo1.png" alt="CGS Computers" width={120} height={120} className="drop-shadow-xl" priority />
                     </div>
-                    <h1 className="text-4xl font-bold tracking-tight mb-2">Liberty Kollection</h1>
+                    <h1 className="text-4xl font-bold tracking-tight mb-2">CGS Computers</h1>
                     <p className="text-foreground/60">Sign in to your account</p>
                 </div>
 
@@ -137,7 +137,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="text-center text-sm text-foreground/40 mt-6">
-                    © 2024 Liberty POS. All rights reserved.
+                    © 2024 CGS Computers POS. All rights reserved.
                 </p>
             </motion.div>
         </div>

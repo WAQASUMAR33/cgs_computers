@@ -516,7 +516,7 @@ function POSContent() {
                     <div class="container">
                         <div class="header">
                             <div>
-                                <h1>Liberty Kollection</h1>
+                                <h1>CGS Computers</h1>
                                 <p>Chapai wali gali, Committee Bazar, Mandi Bahauddin</p>
                                 <p>0345 5754717 | 0546-506717</p>
                             </div>
@@ -643,9 +643,9 @@ function POSContent() {
                     <div class="container">
                         <div class="header">
                             <div style="display: flex; gap: 15px; align-items: center;">
-                                <img src="${window.location.origin}/libertycollection.png" alt="Logo" style="height: 85px; object-fit: contain;" />
+                                <img src="${window.location.origin}/libertycollection.png" alt="CGS Computers" style="height: 85px; object-fit: contain;" />
                                 <div class="store-info">
-                                    <h1>Liberty Kollection</h1>
+                                    <h1>CGS Computers</h1>
                                     <p>Chapai wali gali ,Committe Bazar , Mandi Bahauddin</p>
                                     <p>0345 5754717 | 0546-506717</p>
                                 </div>
@@ -758,7 +758,7 @@ function POSContent() {
             </head>
             <body>
                 <div class="header">
-                    <img src="${window.location.origin}/libertycollection.png" alt="Liberty Kollection" />
+                    <img src="${window.location.origin}/libertycollection.png" alt="CGS Computers" />
                     <p>Chapai wali gali ,Committe Bazar , Mandi Bahauddin</p>
                     <p>0345 5754717 | 0546-506717</p>
                 </div>
@@ -1699,7 +1699,7 @@ function POSContent() {
                             className="relative bg-white text-black p-8 rounded-none-none shadow-2xl max-h-[90vh] overflow-y-auto w-full max-w-lg z-10"
                         >
                             <div className="text-center space-y-1 mb-4 border-b border-dashed border-black/20 pb-4">
-                                <img src="/libertycollection.png" alt="Liberty Kollection" className="h-16 mx-auto object-contain mb-1" />
+                                <img src="/libertycollection.png" alt="CGS Computers" className="h-16 mx-auto object-contain mb-1" />
                                 <p className="text-xs text-black/70 font-medium">Chapai wali gali, Committe Bazar, Mandi Bahauddin</p>
                                 <p className="text-xs text-black/70 font-medium">0345 5754717 | 0546-506717</p>
                                 <div className="mt-2 inline-block px-3 py-1 rounded-none-none text-xs font-black uppercase bg-black/5">

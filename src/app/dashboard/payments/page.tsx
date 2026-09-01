@@ -209,7 +209,7 @@ function PaymentModal({ customers, onClose, onSubmit }: { customers: any[], onCl
             </head>
             <body>
                 <div class="header">
-                    <img src="${window.location.origin}/libertycollection.png" alt="Logo" style="height: 120px; margin-bottom: 5px;" />
+                    <img src="${window.location.origin}/libertycollection.png" alt="CGS Computers" style="height: 120px; margin-bottom: 5px;" />
                     <p>Chapai wali gali ,Committe Bazar , Mandi Bahauddin</p>
                     <p>0345 5754717 | 0546-506717</p>
                     <div class="divider"></div>

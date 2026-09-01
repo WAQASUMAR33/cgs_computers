@@ -277,7 +277,7 @@ export default function LedgerPage() {
 
                 <div class="footer">
                     <p>This is a computer-generated ledger statement</p>
-                    <p>Powered by Liberty POS</p>
+                    <p>Powered by CGS Computers POS</p>
                 </div>
 
                 <script>

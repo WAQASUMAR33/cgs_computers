@@ -163,7 +163,7 @@ export default function ExpensesPage() {
                 <div class="box">
                     <div class="header">
                         <div class="title">
-                            <h1>Liberty Kollection</h1>
+                            <h1>CGS Computers</h1>
                             <p>Committee Bazar, Mandi Bahauddin • 0345 5754717</p>
                         </div>
                         <div class="meta">

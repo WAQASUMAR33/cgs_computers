@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Liberty Kollection",
+  title: "CGS Computers",
   description: "Point of Sale System",
 };
 

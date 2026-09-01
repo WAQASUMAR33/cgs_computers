@@ -64,7 +64,7 @@ function createMainWindow() {
             nodeIntegration: false,
             contextIsolation: true,
         },
-        title: 'Liberty Kollection POS',
+        title: 'CGS Computers POS',
         icon: path.join(__dirname, '../public/logo1.png'),
     });
 
@@ -182,7 +182,7 @@ app.on('ready', async () => {
         if (splashWindow && !splashWindow.isDestroyed()) splashWindow.destroy();
         dialog.showErrorBox(
             'Startup Error',
-            `Liberty POS failed to start.\n\nError: ${err.message}`
+            `CGS Computers POS failed to start.\n\nError: ${err.message}`
         );
         app.quit();
     }

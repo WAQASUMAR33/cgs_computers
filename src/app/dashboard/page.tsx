@@ -76,7 +76,7 @@ export default function Dashboard() {
             <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
                 <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-none-none animate-spin" />
                 <p className="text-sm font-bold text-foreground/50 animate-pulse">
-                    Loading Liberty POS dashboard...
+                    Loading CGS Computers POS dashboard...
                 </p>
             </div>
         );

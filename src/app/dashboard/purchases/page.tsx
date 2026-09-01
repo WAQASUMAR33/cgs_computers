@@ -291,7 +291,7 @@ export default function PurchasesPage() {
                 <div class="container">
                     <div class="header">
                         <div class="store-info">
-                            <h1>Liberty Kollection</h1>
+                            <h1>CGS Computers</h1>
                             <p>Chapai wali gali, Committee Bazar, Mandi Bahauddin</p>
                             <p>0345 5754717 | 0546-506717</p>
                         </div>
