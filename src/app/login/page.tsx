@@ -72,15 +72,18 @@ export default function LoginPage() {
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-foreground/40 uppercase tracking-[0.2em] pl-1">
+                            <label htmlFor="username" className="text-xs font-bold text-foreground/40 uppercase tracking-[0.2em] pl-1">
                                 Username
                             </label>
                             <div className="relative">
                                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/40" />
                                 <input
+                                    id="username"
+                                    name="username"
                                     type="text"
                                     required
                                     autoFocus
+                                    autoComplete="username"
                                     className="w-full pl-12 pr-4 py-4 rounded-none-none bg-black/5 border border-black/5 focus:border-primary focus:outline-none transition-all font-medium text-lg"
                                     placeholder="Enter your username"
                                     value={formData.username}
@@ -90,14 +93,17 @@ export default function LoginPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-foreground/40 uppercase tracking-[0.2em] pl-1">
+                            <label htmlFor="password" className="text-xs font-bold text-foreground/40 uppercase tracking-[0.2em] pl-1">
                                 Password
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/40" />
                                 <input
+                                    id="password"
+                                    name="password"
                                     type={showPassword ? "text" : "password"}
                                     required
+                                    autoComplete="current-password"
                                     className="w-full pl-12 pr-12 py-4 rounded-none-none bg-black/5 border border-black/5 focus:border-primary focus:outline-none transition-all font-medium text-lg"
                                     placeholder="Enter your password"
                                     value={formData.password}
