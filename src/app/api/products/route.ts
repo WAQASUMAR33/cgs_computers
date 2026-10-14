@@ -29,13 +29,19 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const json = await request.json();
+        const costPrice = Number(json.costPrice) || 0;
+        const retailPrice = Number(json.retailPrice) || 0;
+        const wholesalePrice = json.wholesalePrice !== undefined && json.wholesalePrice !== null 
+            ? Number(json.wholesalePrice) 
+            : (retailPrice || costPrice);
+
         const product = await prisma.product.create({
             data: {
-                code: json.code,
-                name: json.name,
-                costPrice: json.costPrice,
-                wholesalePrice: json.wholesalePrice,
-                retailPrice: json.retailPrice,
+                code: json.code?.trim(),
+                name: json.name?.trim(),
+                costPrice: costPrice,
+                wholesalePrice: wholesalePrice,
+                retailPrice: retailPrice,
                 stock: parseInt(json.stock) || 0,
                 categoryId: json.categoryId || null,
                 brandId: json.brandId || null,

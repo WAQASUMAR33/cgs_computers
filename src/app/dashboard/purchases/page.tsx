@@ -41,8 +41,21 @@ export default function PurchasesPage() {
     // Master data
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [brands, setBrands] = useState<any[]>([]);
     const [purchases, setPurchases] = useState<any[]>([]);
     const [loadingPurchases, setLoadingPurchases] = useState(false);
+
+    // Direct / Quick Item Entry State
+    const [directCode, setDirectCode] = useState("");
+    const [directName, setDirectName] = useState("");
+    const [directQty, setDirectQty] = useState<number | string>(1);
+    const [directCost, setDirectCost] = useState<number | string>("");
+    const [directRetail, setDirectRetail] = useState<number | string>("");
+    const [directCategory, setDirectCategory] = useState("");
+    const [directBrand, setDirectBrand] = useState("");
+    const [isAddingDirect, setIsAddingDirect] = useState(false);
+    const [directItemStatus, setDirectItemStatus] = useState<"none" | "existing" | "new">("none");
 
     // Form state
     const [selectedSupplierId, setSelectedSupplierId] = useState("");
@@ -70,18 +83,42 @@ export default function PurchasesPage() {
 
     const loadData = async () => {
         try {
-            const [supRes, prodRes] = await Promise.all([
+            const [supRes, prodRes, catRes, brdRes] = await Promise.all([
                 fetch("/api/suppliers"),
-                fetch("/api/products")
+                fetch("/api/products"),
+                fetch("/api/categories"),
+                fetch("/api/brands")
             ]);
             const supData = await supRes.json();
             const prodData = await prodRes.json();
+            const catData = await catRes.json();
+            const brdData = await brdRes.json();
             setSuppliers(Array.isArray(supData) ? supData : []);
             setProducts(Array.isArray(prodData) ? prodData : []);
+            setCategories(Array.isArray(catData) ? catData : []);
+            setBrands(Array.isArray(brdData) ? brdData : []);
         } catch (e) {
             console.error("Error loading master data:", e);
         }
     };
+
+    // Auto-detect if direct item code matches an existing product in system
+    useEffect(() => {
+        const trimmed = directCode.trim().toLowerCase();
+        if (!trimmed) {
+            setDirectItemStatus("none");
+            return;
+        }
+        const found = products.find((p) => p.code.toLowerCase() === trimmed);
+        if (found) {
+            setDirectItemStatus("existing");
+            setDirectName(found.name);
+            if (!directCost || directCost === 0) setDirectCost(Number(found.costPrice) || 0);
+            if (!directRetail || directRetail === 0) setDirectRetail(Number(found.retailPrice) || 0);
+        } else {
+            setDirectItemStatus("new");
+        }
+    }, [directCode, products]);
 
     const loadPurchases = async () => {
         setLoadingPurchases(true);
@@ -165,6 +202,137 @@ export default function PurchasesPage() {
         }
         setProductQuery("");
         setShowProductDropdown(false);
+    };
+
+    const handleDirectAddItem = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const code = directCode.trim();
+        const name = directName.trim();
+        const qty = Math.max(1, Number(directQty) || 1);
+        const cost = Math.max(0, Number(directCost) || 0);
+        const retail = Math.max(0, Number(directRetail) || (cost > 0 ? cost * 1.15 : 0));
+
+        if (!code && !name) {
+            setFeedback({ type: "error", message: "Please provide either an Item Code / Barcode or Product Name." });
+            return;
+        }
+
+        // 1. Check if product already exists in master product catalog
+        const existing = products.find(
+            (p) => (code && p.code.toLowerCase() === code.toLowerCase()) || 
+                   (name && p.name.toLowerCase() === name.toLowerCase())
+        );
+
+        if (existing) {
+            // Product exists! Add to grid / cart
+            const existingCartIndex = cart.findIndex((c) => c.productId === existing.id);
+            const itemCost = cost > 0 ? cost : (Number(existing.costPrice) || 0);
+            const itemRetail = retail > 0 ? retail : (Number(existing.retailPrice) || 0);
+
+            if (existingCartIndex > -1) {
+                const updated = [...cart];
+                updated[existingCartIndex].quantity += qty;
+                if (cost > 0) updated[existingCartIndex].costPrice = cost;
+                if (retail > 0) updated[existingCartIndex].retailPrice = retail;
+                updated[existingCartIndex].subtotal = updated[existingCartIndex].quantity * updated[existingCartIndex].costPrice;
+                setCart(updated);
+            } else {
+                setCart([
+                    ...cart,
+                    {
+                        id: `${existing.id}-${Date.now()}`,
+                        productId: existing.id,
+                        code: existing.code,
+                        name: existing.name,
+                        quantity: qty,
+                        costPrice: itemCost,
+                        retailPrice: itemRetail,
+                        subtotal: qty * itemCost,
+                    },
+                ]);
+            }
+
+            setFeedback({
+                type: "success",
+                message: `Added existing product "${existing.name}" (${existing.code}) to purchase order.`,
+            });
+
+            // Reset direct inputs
+            setDirectCode("");
+            setDirectName("");
+            setDirectQty(1);
+            setDirectCost("");
+            setDirectRetail("");
+            setDirectItemStatus("none");
+            return;
+        }
+
+        // 2. Product does NOT exist! Auto-register in database and add to grid
+        setIsAddingDirect(true);
+        try {
+            const finalCode = code || `PRD-${Date.now().toString().slice(-6)}`;
+            const finalName = name || `Product ${finalCode}`;
+
+            const res = await fetch("/api/products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    code: finalCode,
+                    name: finalName,
+                    costPrice: cost,
+                    retailPrice: retail || cost,
+                    wholesalePrice: cost,
+                    stock: 0,
+                    categoryId: directCategory || null,
+                    brandId: directBrand || null,
+                }),
+            });
+
+            const newProduct = await res.json();
+            if (!res.ok) {
+                throw new Error(newProduct.error || "Failed to create product automatically");
+            }
+
+            // Update master product list
+            setProducts((prev) => [newProduct, ...prev]);
+
+            // Add directly into cart / grid
+            setCart((prev) => [
+                ...prev,
+                {
+                    id: `${newProduct.id}-${Date.now()}`,
+                    productId: newProduct.id,
+                    code: newProduct.code,
+                    name: newProduct.name,
+                    quantity: qty,
+                    costPrice: cost,
+                    retailPrice: retail || cost,
+                    subtotal: qty * cost,
+                },
+            ]);
+
+            setFeedback({
+                type: "success",
+                message: `✨ New product "${newProduct.name}" (${newProduct.code}) registered automatically and added to grid!`,
+            });
+
+            // Reset direct inputs
+            setDirectCode("");
+            setDirectName("");
+            setDirectQty(1);
+            setDirectCost("");
+            setDirectRetail("");
+            setDirectCategory("");
+            setDirectBrand("");
+            setDirectItemStatus("none");
+        } catch (err: any) {
+            setFeedback({
+                type: "error",
+                message: err.message || "Failed to automatically create product",
+            });
+        } finally {
+            setIsAddingDirect(false);
+        }
     };
 
     const updateCartItem = (id: string, field: "quantity" | "costPrice" | "retailPrice", val: number) => {
@@ -533,123 +701,340 @@ export default function PurchasesPage() {
 
                         {/* Product Search & Line Items */}
                         <div className="p-6 glass border border-black/5 bg-white shadow-xs space-y-4">
-                            <div className="flex justify-between items-center">
+                            <div className="flex flex-wrap justify-between items-center gap-2">
                                 <h3 className="text-xs font-bold text-foreground/50 uppercase tracking-widest flex items-center gap-2">
                                     <Package className="w-4 h-4 text-primary" />
-                                    Select Products to Stock In
+                                    Products &amp; Items to Stock In
                                 </h3>
-                                <span className="text-[11px] text-foreground/40 font-mono">Scan barcode or search by code/name</span>
+                                <span className="text-[11px] text-foreground/40 font-mono">
+                                    Scan barcode or enter code &bull; Auto-detects existing items
+                                </span>
                             </div>
 
-                            {/* Product Search Bar */}
+                            {/* ========================================================= */}
+                            {/* DIRECT ITEM ENTRY & AUTO-CREATE BAR                       */}
+                            {/* ========================================================= */}
+                            <form 
+                                onSubmit={handleDirectAddItem} 
+                                className="p-4 bg-primary/[0.03] border-2 border-dashed border-primary/20 space-y-3"
+                            >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-primary uppercase tracking-wide flex items-center gap-1.5">
+                                            <Plus className="w-3.5 h-3.5" />
+                                            Direct Add / Quick Product Entry
+                                        </span>
+                                        {directItemStatus === "existing" && (
+                                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold border border-blue-200">
+                                                ✓ Existing Catalog Product
+                                            </span>
+                                        )}
+                                        {directItemStatus === "new" && (
+                                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                                                ✨ New Item (Auto-Create &amp; Add)
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-[10px] text-foreground/50 font-medium">
+                                        Scan barcode &amp; press Enter to add directly into grid
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                                    {/* Item Code / Barcode */}
+                                    <div className="sm:col-span-3">
+                                        <label className="text-[10px] font-bold text-foreground/70 uppercase block mb-1">
+                                            Code / Barcode <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Scan barcode or type code..."
+                                            value={directCode}
+                                            onChange={(e) => setDirectCode(e.target.value)}
+                                            className="w-full px-3 py-2 text-xs font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                        />
+                                    </div>
+
+                                    {/* Product Name */}
+                                    <div className="sm:col-span-3">
+                                        <label className="text-[10px] font-bold text-foreground/70 uppercase block mb-1">
+                                            Product Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Item title / description..."
+                                            value={directName}
+                                            onChange={(e) => setDirectName(e.target.value)}
+                                            className="w-full px-3 py-2 text-xs font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                        />
+                                    </div>
+
+                                    {/* Stock-in Qty */}
+                                    <div className="sm:col-span-1">
+                                        <label className="text-[10px] font-bold text-foreground/70 uppercase block mb-1 text-center">
+                                            Qty
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={directQty}
+                                            onChange={(e) => setDirectQty(e.target.value)}
+                                            className="w-full px-2 py-2 text-xs font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground text-center"
+                                        />
+                                    </div>
+
+                                    {/* Cost Price */}
+                                    <div className="sm:col-span-2">
+                                        <label className="text-[10px] font-bold text-foreground/70 uppercase block mb-1">
+                                            Cost Price (RS)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="any"
+                                            placeholder="0.00"
+                                            value={directCost}
+                                            onChange={(e) => setDirectCost(e.target.value)}
+                                            className="w-full px-3 py-2 text-xs font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                        />
+                                    </div>
+
+                                    {/* Retail Price */}
+                                    <div className="sm:col-span-2">
+                                        <label className="text-[10px] font-bold text-foreground/70 uppercase block mb-1">
+                                            Retail Price (RS)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="any"
+                                            placeholder="0.00"
+                                            value={directRetail}
+                                            onChange={(e) => setDirectRetail(e.target.value)}
+                                            className="w-full px-3 py-2 text-xs font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                        />
+                                    </div>
+
+                                    {/* Add Button */}
+                                    <div className="sm:col-span-1">
+                                        <button
+                                            type="submit"
+                                            disabled={isAddingDirect}
+                                            className="w-full py-2 bg-primary hover:bg-primary/90 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 h-[34px]"
+                                            title="Add product directly to purchase grid"
+                                        >
+                                            {isAddingDirect ? (
+                                                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-none animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-4 h-4" />
+                                                    <span className="hidden xl:inline">Add</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Optional Category / Brand assignment when new item is detected */}
+                                {directItemStatus === "new" && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-primary/10">
+                                        <div>
+                                            <label className="text-[10px] font-bold text-foreground/60 uppercase block mb-1">
+                                                Category (Optional)
+                                            </label>
+                                            <select
+                                                value={directCategory}
+                                                onChange={(e) => setDirectCategory(e.target.value)}
+                                                className="w-full px-3 py-1.5 text-xs font-semibold border border-black/10 bg-white text-foreground focus:outline-none focus:border-primary"
+                                            >
+                                                <option value="">No Category</option>
+                                                {categories.map((c) => (
+                                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-foreground/60 uppercase block mb-1">
+                                                Brand (Optional)
+                                            </label>
+                                            <select
+                                                value={directBrand}
+                                                onChange={(e) => setDirectBrand(e.target.value)}
+                                                className="w-full px-3 py-1.5 text-xs font-semibold border border-black/10 bg-white text-foreground focus:outline-none focus:border-primary"
+                                            >
+                                                <option value="">No Brand</option>
+                                                {brands.map((b) => (
+                                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+                            </form>
+
+                            {/* Catalog Search Dropdown (Alternative Look-up) */}
                             <div className="relative" ref={productContainerRef}>
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none" />
-                                <input
-                                    type="text"
-                                    placeholder="Scan barcode or type product name/code..."
-                                    className="w-full pl-10 pr-4 py-2.5 text-xs font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground shadow-xs"
-                                    value={productQuery}
-                                    onChange={(e) => {
-                                        setProductQuery(e.target.value);
-                                        setShowProductDropdown(true);
-                                    }}
-                                    onFocus={() => setShowProductDropdown(true)}
-                                />
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none" />
+                                        <input
+                                            type="text"
+                                            placeholder="Or search catalog items by name/code to select..."
+                                            className="w-full pl-10 pr-4 py-2 text-xs font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground shadow-xs"
+                                            value={productQuery}
+                                            onChange={(e) => {
+                                                setProductQuery(e.target.value);
+                                                setShowProductDropdown(true);
+                                            }}
+                                            onFocus={() => setShowProductDropdown(true)}
+                                        />
+                                    </div>
+                                </div>
 
                                 {showProductDropdown && (
-                                    <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-black/10 shadow-2xl max-h-56 overflow-y-auto divide-y divide-black/5">
+                                    <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-black/10 shadow-2xl max-h-60 overflow-y-auto divide-y divide-black/5">
                                         {filteredProducts.length === 0 ? (
-                                            <div className="p-4 text-center text-xs text-foreground/40">
-                                                No products found matching "{productQuery}"
+                                            <div className="p-4 text-center text-xs space-y-2">
+                                                <p className="text-foreground/50">No catalog product found matching "{productQuery}"</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setDirectCode(productQuery);
+                                                        setDirectName(productQuery);
+                                                        setShowProductDropdown(false);
+                                                        setProductQuery("");
+                                                    }}
+                                                    className="px-3 py-1.5 bg-primary text-white font-bold text-xs hover:bg-primary/90 cursor-pointer inline-flex items-center gap-1.5"
+                                                >
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                    <span>Create &amp; Add "{productQuery}" directly</span>
+                                                </button>
                                             </div>
                                         ) : (
-                                            filteredProducts.map((p) => (
-                                                <div
-                                                    key={p.id}
-                                                    onClick={() => handleSelectProduct(p)}
-                                                    className="p-3 hover:bg-primary/5 cursor-pointer flex justify-between items-center transition-colors text-xs"
-                                                >
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-mono font-bold text-primary">{p.code}</span>
-                                                            <span className="font-bold text-foreground">{p.name}</span>
+                                            <>
+                                                {filteredProducts.map((p) => (
+                                                    <div
+                                                        key={p.id}
+                                                        onClick={() => handleSelectProduct(p)}
+                                                        className="p-2.5 hover:bg-primary/5 cursor-pointer flex justify-between items-center transition-colors text-xs"
+                                                    >
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-mono font-bold text-primary">{p.code}</span>
+                                                                <span className="font-bold text-foreground">{p.name}</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-foreground/40 mt-0.5">
+                                                                Cost: {formatCurrency(p.costPrice)} | Retail: {formatCurrency(p.retailPrice)} | Stock: {p.stock}
+                                                            </p>
                                                         </div>
-                                                        <p className="text-[11px] text-foreground/40 mt-0.5">
-                                                            Current Cost: {formatCurrency(p.costPrice)} | Current Stock: {p.stock} units
-                                                        </p>
+                                                        <span className="font-bold text-primary text-xs">+ Add to Grid</span>
                                                     </div>
-                                                    <span className="font-bold text-primary">+ Add</span>
-                                                </div>
-                                            ))
+                                                ))}
+
+                                                {/* Option to create new product from query */}
+                                                {productQuery.trim() && (
+                                                    <div
+                                                        onClick={() => {
+                                                            setDirectCode(productQuery);
+                                                            setDirectName(productQuery);
+                                                            setShowProductDropdown(false);
+                                                            setProductQuery("");
+                                                        }}
+                                                        className="p-2.5 bg-emerald-50 hover:bg-emerald-100 cursor-pointer flex items-center gap-2 text-emerald-800 text-xs font-bold transition-colors"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                                                        <span>Create &amp; Add new product: "{productQuery}"</span>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Cart / Stock In Table */}
+                            {/* ========================================================= */}
+                            {/* CART / PURCHASE ORDER GRID                                */}
+                            {/* ========================================================= */}
                             <div className="border border-black/5 overflow-hidden">
                                 {cart.length === 0 ? (
-                                    <div className="p-12 text-center text-foreground/40 text-xs">
+                                    <div className="p-10 text-center text-foreground/40 text-xs">
                                         <Truck className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                                        <p className="font-bold">No products selected for stock in</p>
-                                        <p className="mt-0.5">Use the search box above to add items to this purchase order.</p>
+                                        <p className="font-bold text-sm text-foreground/60">No products in purchase grid</p>
+                                        <p className="mt-0.5">Scan a barcode, enter an item code, or search above to add items.</p>
                                     </div>
                                 ) : (
-                                    <table className="w-full text-left border-collapse text-xs">
-                                        <thead>
-                                            <tr className="border-b border-black/5 bg-black/[0.02]">
-                                                <th className="px-4 py-2.5 font-bold uppercase text-foreground/50">Item</th>
-                                                <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-center">Stock In Qty</th>
-                                                <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-right">Cost Price (RS)</th>
-                                                <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-right">Subtotal</th>
-                                                <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-center">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-black/5">
-                                            {cart.map((item) => (
-                                                <tr key={item.id} className="hover:bg-black/[0.01]">
-                                                    <td className="px-4 py-3">
-                                                        <p className="font-bold text-foreground">{item.name}</p>
-                                                        <p className="text-[10px] font-mono text-foreground/40">{item.code}</p>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            className="w-20 px-2 py-1 text-center font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
-                                                            value={item.quantity}
-                                                            onChange={(e) =>
-                                                                updateCartItem(item.id, "quantity", Math.max(1, Number(e.target.value)))
-                                                            }
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            className="w-24 px-2 py-1 text-right font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
-                                                            value={item.costPrice}
-                                                            onChange={(e) =>
-                                                                updateCartItem(item.id, "costPrice", Math.max(0, Number(e.target.value)))
-                                                            }
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-black text-sm text-foreground">
-                                                        {formatCurrency(item.subtotal)}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        <button
-                                                            onClick={() => removeCartItem(item.id)}
-                                                            className="p-1 hover:bg-red-500/10 text-foreground/40 hover:text-red-500 cursor-pointer transition-colors"
-                                                            title="Remove item"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </td>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse text-xs">
+                                            <thead>
+                                                <tr className="border-b border-black/5 bg-black/[0.02]">
+                                                    <th className="px-4 py-2.5 font-bold uppercase text-foreground/50">Item</th>
+                                                    <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-center">Stock In Qty</th>
+                                                    <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-right">Cost Price (RS)</th>
+                                                    <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-right">Retail Price (RS)</th>
+                                                    <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-right">Subtotal</th>
+                                                    <th className="px-4 py-2.5 font-bold uppercase text-foreground/50 text-center">Action</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-black/5">
+                                                {cart.map((item) => (
+                                                    <tr key={item.id} className="hover:bg-black/[0.01]">
+                                                        <td className="px-4 py-3">
+                                                            <p className="font-bold text-foreground">{item.name}</p>
+                                                            <p className="text-[10px] font-mono text-foreground/40">{item.code}</p>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                className="w-20 px-2 py-1 text-center font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                                                value={item.quantity}
+                                                                onChange={(e) =>
+                                                                    updateCartItem(item.id, "quantity", Math.max(1, Number(e.target.value)))
+                                                                }
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="any"
+                                                                className="w-24 px-2 py-1 text-right font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                                                value={item.costPrice}
+                                                                onChange={(e) =>
+                                                                    updateCartItem(item.id, "costPrice", Math.max(0, Number(e.target.value)))
+                                                                }
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="any"
+                                                                className="w-24 px-2 py-1 text-right font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                                                value={item.retailPrice ?? ""}
+                                                                placeholder="0.00"
+                                                                onChange={(e) =>
+                                                                    updateCartItem(item.id, "retailPrice", Math.max(0, Number(e.target.value)))
+                                                                }
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-black text-sm text-foreground">
+                                                            {formatCurrency(item.subtotal)}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <button
+                                                                onClick={() => removeCartItem(item.id)}
+                                                                className="p-1 hover:bg-red-500/10 text-foreground/40 hover:text-red-500 cursor-pointer transition-colors"
+                                                                title="Remove item"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 )}
                             </div>
                         </div>
