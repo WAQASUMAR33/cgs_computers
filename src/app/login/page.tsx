@@ -66,42 +66,6 @@ function IconDatabase({ className = "w-4 h-4" }: { className?: string }) {
     );
 }
 
-function IconBarcode({ className = "w-4 h-4" }: { className?: string }) {
-    return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 5v14" /><path d="M8 5v14" /><path d="M12 5v14" /><path d="M17 5v14" /><path d="M21 5v14" />
-        </svg>
-    );
-}
-
-function IconLayers({ className = "w-4 h-4" }: { className?: string }) {
-    return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
-            <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
-            <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
-        </svg>
-    );
-}
-
-function IconReceipt({ className = "w-4 h-4" }: { className?: string }) {
-    return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
-            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
-            <path d="M12 17.5v-11" />
-        </svg>
-    );
-}
-
-function IconShieldCheck({ className = "w-4 h-4" }: { className?: string }) {
-    return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-            <path d="m9 12 2 2 4-4" />
-        </svg>
-    );
-}
 
 function IconSparkles({ className = "w-4 h-4" }: { className?: string }) {
     return (
@@ -315,56 +279,6 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Feature Cards Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                        <div className="p-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 transition-all duration-200 group">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300 group-hover:scale-105 transition-transform">
-                                    <IconBarcode className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xs font-bold text-white">Rapid POS Billing</h2>
-                                    <p className="text-[11px] text-slate-300">Barcode scanner &amp; A4/thermal printing</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 transition-all duration-200 group">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 group-hover:scale-105 transition-transform">
-                                    <IconLayers className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xs font-bold text-white">Live Stock Control</h2>
-                                    <p className="text-[11px] text-slate-300">Brand &amp; category filters with alerts</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 transition-all duration-200 group">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 group-hover:scale-105 transition-transform">
-                                    <IconReceipt className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xs font-bold text-white">Customer Ledgers</h2>
-                                    <p className="text-[11px] text-slate-300">Automated debit, credit &amp; logs</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 transition-all duration-200 group">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-violet-500/20 border border-violet-400/30 flex items-center justify-center text-violet-300 group-hover:scale-105 transition-transform">
-                                    <IconShieldCheck className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xs font-bold text-white">Multi-Role Security</h2>
-                                    <p className="text-[11px] text-slate-300">Separated Admin &amp; Cashier accounts</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Bottom Status / Specs */}
