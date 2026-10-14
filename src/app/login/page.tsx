@@ -45,16 +45,6 @@ function IconEyeOff({ className = "w-4 h-4" }: { className?: string }) {
     );
 }
 
-function IconServer({ className = "w-4 h-4" }: { className?: string }) {
-    return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="20" height="8" x="2" y="2" rx="2" ry="2" />
-            <rect width="20" height="8" x="2" y="14" rx="2" ry="2" />
-            <line x1="6" x2="6.01" y1="6" y2="6" />
-            <line x1="6" x2="6.01" y1="18" y2="18" />
-        </svg>
-    );
-}
 
 function IconDatabase({ className = "w-4 h-4" }: { className?: string }) {
     return (
@@ -281,14 +271,10 @@ export default function LoginPage() {
 
                 </div>
 
-                {/* Bottom Status / Specs */}
-                <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                    <div className="flex items-center gap-2">
-                        <IconServer className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Connected to MySQL Database</span>
-                    </div>
-                    <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white/10 text-slate-300">
-                        v2.4 Desktop &amp; Cloud
+                {/* Bottom Footer */}
+                <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-center text-xs text-slate-400">
+                    <span className="text-xs tracking-wider text-slate-400">
+                        Powered by <span className="font-bold text-white tracking-wide">RAPIDTECHPRO</span>
                     </span>
                 </div>
             </div>
