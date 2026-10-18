@@ -14,7 +14,8 @@ import {
     ChevronDown,
     Phone,
     CreditCard,
-    CheckCircle2
+    CheckCircle2,
+    FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -103,6 +104,9 @@ export default function LedgerPage() {
         const printWindow = window.open("", "_blank", "width=800,height=1000");
         if (!printWindow) return;
 
+        const totalDebit = ledger.reduce((sum, e) => sum + Number(e.debit || 0), 0);
+        const totalCredit = ledger.reduce((sum, e) => sum + Number(e.credit || 0), 0);
+
         const ledgerHTML = `
             <!DOCTYPE html>
             <html>
@@ -110,183 +114,85 @@ export default function LedgerPage() {
                 <meta charset="UTF-8">
                 <title>Customer Ledger - ${selectedCustomer.name}</title>
                 <style>
-                    @page {
-                        size: A4;
-                        margin: 15mm;
-                    }
-                    body {
-                        font-family: Arial, sans-serif;
-                        font-size: 12px;
-                        line-height: 1.5;
-                        color: black;
-                        margin: 0;
-                        padding: 20px;
-                        background: white;
-                    }
-                    .header {
-                        text-align: center;
-                        margin-bottom: 30px;
-                        border-bottom: 3px solid #000;
-                        padding-bottom: 15px;
-                    }
-                    .header h1 {
-                        font-size: 28px;
-                        margin: 0 0 5px 0;
-                        font-weight: bold;
-                    }
-                    .header p {
-                        margin: 0;
-                        font-size: 14px;
-                        color: #666;
-                    }
-                    .customer-info {
-                        background: #f5f5f5;
-                        padding: 15px;
-                        border: 1px solid #ddd;
-                        margin-bottom: 20px;
-                    }
-                    .customer-info h2 {
-                        margin: 0 0 10px 0;
-                        font-size: 18px;
-                    }
-                    .info-grid {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                    }
-                    .info-row {
-                        display: flex;
-                        justify-content: space-between;
-                    }
-                    .info-row .label {
-                        font-weight: 600;
-                        color: #666;
-                    }
-                    .info-row .value {
-                        font-weight: bold;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 20px 0;
-                    }
-                    thead {
-                        background: #f5f5f5;
-                    }
-                    th {
-                        padding: 12px 8px;
-                        text-align: left;
-                        font-weight: bold;
-                        font-size: 11px;
-                        text-transform: uppercase;
-                        border: 1px solid #ddd;
-                    }
-                    td {
-                        padding: 10px 8px;
-                        border: 1px solid #ddd;
-                        font-size: 12px;
-                    }
-                    .text-right {
-                        text-align: right;
-                    }
-                    .text-center {
-                        text-align: center;
-                    }
-                    .debit {
-                        color: #059669;
-                        font-weight: bold;
-                    }
-                    .credit {
-                        color: #dc2626;
-                        font-weight: bold;
-                    }
-                    .balance-positive {
-                        color: #059669;
-                    }
-                    .balance-negative {
-                        color: #dc2626;
-                    }
-                    .footer {
-                        margin-top: 30px;
-                        padding-top: 15px;
-                        border-top: 2px solid #000;
-                        text-align: center;
-                        font-size: 11px;
-                        color: #666;
-                    }
+                    @page { size: A4; margin: 15mm; }
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; line-height: 1.5; color: #0f172a; margin: 0; padding: 15px; background: white; }
+                    .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #0f172a; padding-bottom: 12px; }
+                    .header h1 { font-size: 24px; margin: 0 0 4px 0; font-weight: 900; letter-spacing: -0.5px; }
+                    .header p { margin: 0; font-size: 11px; color: #64748b; }
+                    .customer-info { background: #f8fafc; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px; }
+                    .customer-info h2 { margin: 0 0 8px 0; font-size: 16px; font-weight: 800; color: #2563eb; }
+                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; }
+                    .info-row { display: flex; justify-content: space-between; }
+                    .info-row .label { font-weight: 600; color: #64748b; }
+                    .info-row .value { font-weight: bold; }
+                    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                    th { background: #0f172a; color: white; padding: 8px; text-align: left; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+                    td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .debit { color: #059669; font-weight: bold; }
+                    .credit { color: #dc2626; font-weight: bold; }
+                    .footer { margin-top: 35px; padding-top: 15px; border-top: 1px solid #cbd5e1; text-align: center; font-size: 10px; color: #64748b; }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1>CUSTOMER LEDGER</h1>
-                    <p>Chapai wali gali ,Committe Bazar , Mandi Bahauddin</p>
+                    <h1>CGS COMPUTERS</h1>
+                    <p>Near Post Office Mandi Bahauddin • 0343-8483919 / 0333-8483919</p>
+                    <p style="font-size: 12px; font-weight: bold; margin-top: 5px; color: #2563eb;">CUSTOMER AUDIT LEDGER STATEMENT</p>
                 </div>
 
                 <div class="customer-info">
                     <h2>${selectedCustomer.name}</h2>
                     <div class="info-grid">
-                        <div class="info-row">
-                            <span class="label">Contact:</span>
-                            <span class="value">${selectedCustomer.contact || "N/A"}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Current Balance:</span>
-                            <span class="value ${Number(selectedCustomer.balance) >= 0 ? "balance-negative" : "balance-positive"}">
-                                ${Number(selectedCustomer.balance).toFixed(2)}
-                            </span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Address:</span>
-                            <span class="value">${selectedCustomer.address || "N/A"}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Print Date:</span>
-                            <span class="value">${new Date().toLocaleDateString()}</span>
-                        </div>
+                        <div class="info-row"><span class="label">Contact:</span> <span class="value">${selectedCustomer.contact || "—"}</span></div>
+                        <div class="info-row"><span class="label">Current Balance:</span> <span class="value" style="color: ${Number(selectedCustomer.balance) > 0 ? '#dc2626' : '#059669'};">RS ${Number(selectedCustomer.balance).toFixed(2)}</span></div>
+                        <div class="info-row"><span class="label">CNIC / ID:</span> <span class="value">${selectedCustomer.cnic || "—"}</span></div>
+                        <div class="info-row"><span class="label">Address:</span> <span class="value">${selectedCustomer.address || "—"}</span></div>
                     </div>
                 </div>
 
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 12%;">Date</th>
-                            <th style="width: 40%;">Description</th>
-                            <th style="width: 12%;" class="text-right">Debit</th>
-                            <th style="width: 12%;" class="text-right">Credit</th>
-                            <th style="width: 12%;" class="text-right">Balance</th>
+                            <th style="width: 15%;">Date</th>
+                            <th style="width: 45%;">Description / Ref</th>
+                            <th class="text-right" style="width: 13%;">Debit (Paid)</th>
+                            <th class="text-right" style="width: 13%;">Credit (Bill)</th>
+                            <th class="text-right" style="width: 14%;">Balance</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${ledger
-                            .map(
-                                (entry: any) => `
+                        ${ledger.map((entry) => `
                             <tr>
                                 <td>${new Date(entry.date).toLocaleDateString()}</td>
-                                <td>${entry.description}</td>
-                                <td class="text-right debit">${Number(entry.debit) > 0 ? Number(entry.debit).toFixed(2) : "-"}</td>
-                                <td class="text-right credit">${Number(entry.credit) > 0 ? Number(entry.credit).toFixed(2) : "-"}</td>
-                                <td class="text-right ${Number(entry.balance) >= 0 ? "balance-negative" : "balance-positive"}">
-                                    ${Number(entry.balance).toFixed(2)}
+                                <td>
+                                    <strong>${entry.description}</strong>
+                                    ${entry.sale ? ` <span style="font-family: monospace; font-size: 9px; color: #2563eb;">(${entry.sale.billNumber})</span>` : ""}
                                 </td>
+                                <td class="text-right debit">${Number(entry.debit) > 0 ? Number(entry.debit).toFixed(2) : "—"}</td>
+                                <td class="text-right credit">${Number(entry.credit) > 0 ? Number(entry.credit).toFixed(2) : "—"}</td>
+                                <td class="text-right"><strong>RS ${Number(entry.balance).toFixed(2)}</strong></td>
                             </tr>
-                        `
-                            )
-                            .join("")}
+                        `).join("")}
                     </tbody>
                 </table>
 
+                <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                    <table style="width: 320px; font-size: 11px;">
+                        <tr><td style="font-weight: 600;">Total Payments (Debit):</td><td class="text-right debit">RS ${totalDebit.toFixed(2)}</td></tr>
+                        <tr><td style="font-weight: 600;">Total Billed (Credit):</td><td class="text-right credit">RS ${totalCredit.toFixed(2)}</td></tr>
+                        <tr style="border-top: 2px solid #0f172a;"><td style="font-size: 13px; font-weight: 900;">Closing Balance:</td><td class="text-right" style="font-size: 13px; font-weight: 900; color: ${Number(selectedCustomer.balance) > 0 ? '#dc2626' : '#059669'};">RS ${Number(selectedCustomer.balance).toFixed(2)}</td></tr>
+                    </table>
+                </div>
+
                 <div class="footer">
-                    <p>This is a computer-generated ledger statement</p>
-                    <p>Powered by CGS Computers POS</p>
+                    <p>Official Computer-Generated Ledger • CGS Computers Mandi Bahauddin</p>
+                    <p>Printed on: ${new Date().toLocaleString()}</p>
                 </div>
 
                 <script>
-                    window.onload = function() {
-                        window.print();
-                        window.onafterprint = function() {
-                            window.close();
-                        };
-                    };
+                    window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; };
                 </script>
             </body>
             </html>
@@ -297,40 +203,40 @@ export default function LedgerPage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 pb-12">
             {/* Header & Print Button */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
                         Customer Ledger
                     </h2>
-                    <p className="text-foreground/60 text-sm mt-0.5">
-                        Comprehensive financial history and balance tracking.
+                    <p className="text-slate-500 text-sm mt-0.5">
+                        Comprehensive account statement, payment history, and credit balance audit.
                     </p>
                 </div>
                 <button
                     onClick={printLedger}
                     disabled={!selectedCustomerId || ledger.length === 0}
-                    className="px-6 py-3 glass border border-black/10 text-foreground font-bold flex items-center gap-2 hover:bg-black/5 transition-all disabled:opacity-40 shadow-xs cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold text-xs flex items-center gap-2 hover:bg-slate-50 transition-all disabled:opacity-40 shadow-xs cursor-pointer active:scale-95 self-start sm:self-auto"
                 >
-                    <Printer className="w-4 h-4" />
-                    <span>Print Ledger</span>
+                    <Printer className="w-4 h-4 text-blue-600" />
+                    <span>Print Ledger Statement</span>
                 </button>
             </div>
 
             {/* Filterable Customer Search Dropdown */}
             <div className="flex flex-col sm:flex-row gap-4 no-print" ref={customerContainerRef}>
                 <div className="relative flex-1 max-w-xl">
-                    <label className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em] block mb-1 pl-0.5">
-                        Filter & Select Customer
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5 pl-0.5">
+                        Select Customer Account
                     </label>
 
                     <div className="relative flex items-center">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none" />
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                             type="text"
-                            placeholder="Type customer name, contact number, or CNIC..."
-                            className="w-full pl-11 pr-20 py-3.5 glass border border-black/10 focus:outline-none focus:border-primary font-bold text-sm bg-white text-foreground placeholder:text-foreground/40 shadow-xs"
+                            placeholder="Type customer name, phone number, or CNIC..."
+                            className="w-full pl-10 pr-20 py-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-semibold text-sm text-slate-900 placeholder:text-slate-400 shadow-xs transition-all"
                             value={customerSearch}
                             onChange={(e) => {
                                 setCustomerSearch(e.target.value);
@@ -343,8 +249,8 @@ export default function LedgerPage() {
                             {customerSearch && (
                                 <button
                                     onClick={handleClearCustomer}
-                                    className="p-1 text-foreground/40 hover:text-foreground cursor-pointer"
-                                    title="Clear customer"
+                                    className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                                    title="Clear selection"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -352,7 +258,7 @@ export default function LedgerPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
-                                className="p-1 text-foreground/40 hover:text-foreground cursor-pointer"
+                                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
                             >
                                 <ChevronDown className={cn("w-4 h-4 transition-transform", showCustomerDropdown && "rotate-180")} />
                             </button>
@@ -367,10 +273,10 @@ export default function LedgerPage() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -6 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute z-40 left-0 right-0 top-full mt-1.5 bg-white border border-black/10 shadow-2xl max-h-72 overflow-y-auto divide-y divide-black/5 custom-scrollbar"
+                                className="absolute z-40 left-0 right-0 top-full mt-2 rounded-2xl bg-white border border-slate-200 shadow-xl max-h-72 overflow-y-auto divide-y divide-slate-100 custom-scrollbar"
                             >
                                 {filteredCustomers.length === 0 ? (
-                                    <div className="p-5 text-center text-xs text-foreground/40 font-medium">
+                                    <div className="p-6 text-center text-xs text-slate-400 font-medium">
                                         No customer found matching "{customerSearch}"
                                     </div>
                                 ) : (
@@ -382,19 +288,19 @@ export default function LedgerPage() {
                                                 key={c.id}
                                                 onClick={() => handleSelectCustomer(c)}
                                                 className={cn(
-                                                    "p-3.5 hover:bg-primary/5 cursor-pointer flex justify-between items-center transition-colors group",
-                                                    isSelected && "bg-primary/10 font-bold"
+                                                    "p-3.5 hover:bg-blue-50/50 cursor-pointer flex justify-between items-center transition-colors group",
+                                                    isSelected && "bg-blue-50/80 font-bold"
                                                 )}
                                             >
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
                                                         {c.name?.[0]?.toUpperCase() || "C"}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                                                        <p className="font-bold text-xs sm:text-sm text-slate-800 truncate group-hover:text-blue-600 transition-colors">
                                                             {c.name}
                                                         </p>
-                                                        <p className="text-xs text-foreground/40 truncate">
+                                                        <p className="text-[11px] text-slate-400 truncate">
                                                             {c.contact || "No phone"} {c.cnic ? `• ${c.cnic}` : ""}
                                                         </p>
                                                     </div>
@@ -403,10 +309,10 @@ export default function LedgerPage() {
                                                 <div className="text-right shrink-0 ml-3">
                                                     <span
                                                         className={cn(
-                                                            "text-xs font-black px-2.5 py-1 inline-block",
+                                                            "text-xs font-bold px-2.5 py-1 rounded-full border",
                                                             hasBalance
-                                                                ? "bg-red-500/10 text-red-600 border border-red-500/20"
-                                                                : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
                                                         )}
                                                     >
                                                         {formatCurrency(c.balance || 0)}
@@ -426,102 +332,112 @@ export default function LedgerPage() {
             {selectedCustomerId ? (
                 <div id="ledger-content" className="space-y-6">
                     {/* Customer Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="p-6 glass border border-black/5 bg-white shadow-xs">
-                            <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest mb-1">
-                                Customer Details
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                Customer Account
                             </p>
-                            <h3 className="text-xl font-black text-foreground">{selectedCustomer?.name}</h3>
-                            <p className="text-sm text-foreground/60 mt-1">{selectedCustomer?.contact || "No contact"}</p>
-                            <p className="text-[11px] text-foreground/40 mt-3 leading-relaxed uppercase font-medium">
-                                {selectedCustomer?.address || "No address on file"}
+                            <h3 className="text-xl font-extrabold text-slate-900">{selectedCustomer?.name}</h3>
+                            <p className="text-xs font-semibold text-slate-500 mt-1">{selectedCustomer?.contact || "No contact on file"}</p>
+                            <p className="text-[11px] text-slate-400 mt-3 leading-relaxed font-medium">
+                                {selectedCustomer?.address || "No address provided"}
                             </p>
                         </div>
-                        <div className="p-6 glass border border-red-500/15 bg-white shadow-xs">
-                            <p className="text-xs font-bold text-red-600 uppercase tracking-widest mb-1">
-                                Total Credit Sales
+
+                        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                Cumulative Credit Purchases
                             </p>
-                            <h3 className="text-3xl font-black text-red-600">
+                            <h3 className="text-2xl sm:text-3xl font-black text-rose-600 tracking-tight">
                                 {formatCurrency(ledger.reduce((sum, e) => sum + Number(e.credit || 0), 0))}
                             </h3>
-                            <p className="text-[10px] text-red-600/60 mt-1 uppercase font-black">
-                                Cumulative Credit Invoices
+                            <p className="text-xs text-rose-700/70 mt-1 font-semibold">
+                                Total billed transactions
                             </p>
                         </div>
-                        <div className="p-6 glass border border-blue-500/15 bg-white shadow-xs">
-                            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">
-                                Current Balance
+
+                        <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                Current Ledger Balance
                             </p>
-                            <h3 className="text-3xl font-black text-foreground">
+                            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                                 {formatCurrency(selectedCustomer?.balance || 0)}
                             </h3>
-                            <p className="text-[10px] text-primary/70 mt-1 uppercase font-black">
-                                Net Outstanding Amount
+                            <p className={cn(
+                                "text-xs font-bold mt-1",
+                                Number(selectedCustomer?.balance) > 0 ? "text-rose-600" : "text-emerald-600"
+                            )}>
+                                {Number(selectedCustomer?.balance) > 0 ? "Outstanding Receivable Due" : "Settled / In Advance"}
                             </p>
                         </div>
                     </div>
 
                     {/* Ledger Transactions Table */}
-                    <div className="glass border border-black/5 overflow-hidden shadow-xs bg-white">
-                        <div className="p-6 border-b border-black/5 bg-black/[0.01] flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <Calendar className="w-5 h-5 text-primary" />
-                                <h3 className="font-bold uppercase tracking-widest text-xs text-foreground">
+                    <div className="rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-sm">
+                        <div className="p-5 border-b border-slate-200 bg-slate-50/80 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                                    <FileText className="w-4 h-4" />
+                                </div>
+                                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800">
                                     Statement of Account
                                 </h3>
                             </div>
-                            <div className="text-[10px] font-black text-foreground/40 italic">
-                                Generated on {new Date().toLocaleString()}
+                            <div className="text-[11px] font-semibold text-slate-400">
+                                Statement for {selectedCustomer?.name} • Generated on {new Date().toLocaleDateString()}
                             </div>
                         </div>
+
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
+                            <table className="w-full text-left border-collapse text-xs">
                                 <thead>
-                                    <tr className="border-b border-black/5 bg-black/[0.01]">
-                                        <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest">
+                                    <tr className="border-b border-slate-200 bg-slate-50">
+                                        <th className="px-5 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                             Date
                                         </th>
-                                        <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest">
-                                            Description
+                                        <th className="px-5 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                            Description / Ref
                                         </th>
-                                        <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest text-right">
-                                            Debit
+                                        <th className="px-5 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                                            Debit (Received)
                                         </th>
-                                        <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest text-right">
-                                            Credit
+                                        <th className="px-5 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                                            Credit (Sale)
                                         </th>
-                                        <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest text-right">
+                                        <th className="px-5 py-3.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
                                             Running Balance
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-black/5">
+                                <tbody className="divide-y divide-slate-100">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-20 text-center text-foreground/40 italic">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="w-8 h-8 border-3 border-primary/30 border-t-primary rounded-none animate-spin" />
-                                                    <span>Loading ledger records...</span>
+                                            <td colSpan={5} className="px-6 py-20 text-center text-slate-400">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="w-6 h-6 border-2 border-blue-500/20 border-t-blue-600 rounded-full animate-spin" />
+                                                    <span className="text-xs font-semibold">Loading ledger records...</span>
                                                 </div>
                                             </td>
                                         </tr>
                                     ) : ledger.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-20 text-center text-foreground/40">
-                                                No transactions found for this customer.
+                                            <td colSpan={5} className="px-6 py-16 text-center text-slate-400 font-medium">
+                                                <BookOpen className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                                                <p className="text-slate-600 font-semibold">No transactions recorded</p>
+                                                <p className="text-[11px] text-slate-400 mt-0.5">This customer has no prior debit or credit records.</p>
                                             </td>
                                         </tr>
                                     ) : (
                                         <>
                                             {/* Opening Balance Row */}
-                                            <tr className="bg-black/[0.01]">
-                                                <td className="px-6 py-4 text-xs opacity-40">Initial</td>
-                                                <td className="px-6 py-4 font-bold text-xs uppercase opacity-40 tracking-widest">
+                                            <tr className="bg-slate-50/50">
+                                                <td className="px-5 py-3 text-slate-400 font-mono">Initial</td>
+                                                <td className="px-5 py-3 font-bold text-slate-500 uppercase tracking-wider text-[11px]">
                                                     Opening Balance
                                                 </td>
-                                                <td className="px-6 py-4 text-right">—</td>
-                                                <td className="px-6 py-4 text-right">—</td>
-                                                <td className="px-6 py-4 text-right font-black opacity-40 tracking-tighter">
+                                                <td className="px-5 py-3 text-right text-slate-400">—</td>
+                                                <td className="px-5 py-3 text-right text-slate-400">—</td>
+                                                <td className="px-5 py-3 text-right font-black text-slate-600">
                                                     {formatCurrency(
                                                         Number(ledger[0]?.balance || 0) -
                                                             Number(ledger[0]?.credit || 0) +
@@ -532,48 +448,48 @@ export default function LedgerPage() {
                                             {ledger.map((entry: any) => (
                                                 <tr
                                                     key={entry.id}
-                                                    className="hover:bg-black/[0.01] transition-colors relative group"
+                                                    className="hover:bg-blue-50/30 transition-colors group"
                                                 >
-                                                    <td className="px-6 py-4 text-xs text-foreground/60 font-medium">
+                                                    <td className="px-5 py-3.5 text-slate-600 font-medium">
                                                         {new Date(entry.date).toLocaleDateString()}
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <p className="font-bold text-sm text-foreground">
+                                                    <td className="px-5 py-3.5">
+                                                        <p className="font-bold text-slate-800 text-xs sm:text-sm">
                                                             {entry.description}
                                                         </p>
                                                         {entry.sale && (
-                                                            <p className="text-[10px] text-primary uppercase font-black mt-0.5">
-                                                                Ref: {entry.sale.billNumber}
+                                                            <p className="text-[10px] text-blue-600 font-mono font-bold mt-0.5">
+                                                                Bill Ref: {entry.sale.billNumber}
                                                             </p>
                                                         )}
                                                         {entry.saleReturn && (
-                                                            <p className="text-[10px] text-red-600 uppercase font-black mt-0.5">
+                                                            <p className="text-[10px] text-rose-600 font-mono font-bold mt-0.5">
                                                                 Return Ref: {entry.saleReturn.returnNumber}
                                                             </p>
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right">
+                                                    <td className="px-5 py-3.5 text-right">
                                                         {Number(entry.debit) > 0 ? (
-                                                            <div className="flex items-center justify-end gap-2 text-emerald-600 font-bold">
-                                                                {formatCurrency(entry.debit)}
-                                                                <ArrowDownLeft className="w-3 h-3 group-hover:-translate-x-1 group-hover:translate-y-1 transition-transform" />
+                                                            <div className="flex items-center justify-end gap-1.5 text-emerald-600 font-bold text-xs sm:text-sm">
+                                                                <span>{formatCurrency(entry.debit)}</span>
+                                                                <ArrowDownLeft className="w-3.5 h-3.5 shrink-0" />
                                                             </div>
                                                         ) : (
-                                                            "—"
+                                                            <span className="text-slate-300">—</span>
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right">
+                                                    <td className="px-5 py-3.5 text-right">
                                                         {Number(entry.credit) > 0 ? (
-                                                            <div className="flex items-center justify-end gap-2 text-red-600 font-bold">
-                                                                {formatCurrency(entry.credit)}
-                                                                <ArrowUpRight className="w-3 h-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                                            <div className="flex items-center justify-end gap-1.5 text-rose-600 font-bold text-xs sm:text-sm">
+                                                                <span>{formatCurrency(entry.credit)}</span>
+                                                                <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
                                                             </div>
                                                         ) : (
-                                                            "—"
+                                                            <span className="text-slate-300">—</span>
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <span className="font-black text-foreground px-3 py-1 bg-black/5 border border-black/5">
+                                                    <td className="px-5 py-3.5 text-right">
+                                                        <span className="font-mono font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/80">
                                                             {formatCurrency(entry.balance)}
                                                         </span>
                                                     </td>
@@ -587,54 +503,16 @@ export default function LedgerPage() {
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-32 border border-dashed border-black/10 bg-black/[0.01] text-foreground/40">
-                    <BookOpen className="w-14 h-14 mb-4 stroke-[1.5]" />
-                    <p className="text-base font-bold">Select a customer above to view their financial statement & ledger history.</p>
+                <div className="flex flex-col items-center justify-center py-28 rounded-3xl border-2 border-dashed border-slate-200 bg-white text-slate-400 p-6 text-center">
+                    <div className="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+                        <BookOpen className="w-8 h-8" />
+                    </div>
+                    <p className="text-base font-bold text-slate-800">Select a Customer Account Above</p>
+                    <p className="text-xs text-slate-400 max-w-sm mt-1">
+                        Use the search dropdown above to view debit/credit transaction history and print account statements.
+                    </p>
                 </div>
             )}
-
-            <style jsx global>{`
-                @media print {
-                    .no-print {
-                        display: none !important;
-                    }
-                    body {
-                        background: white !important;
-                        color: black !important;
-                    }
-                    .glass {
-                        background: transparent !important;
-                        border-color: #eee !important;
-                        box-shadow: none !important;
-                    }
-                    .text-white {
-                        color: black !important;
-                    }
-                    .text-foreground\/60 {
-                        color: #666 !important;
-                    }
-                    .text-foreground\/40 {
-                        color: #999 !important;
-                    }
-                    #ledger-content {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                    }
-                    table {
-                        width: 100% !important;
-                        border: 1px solid #eee !important;
-                    }
-                    th {
-                        background: #f9f9f9 !important;
-                        border-bottom: 2px solid #000 !important;
-                    }
-                    td {
-                        border-bottom: 1px solid #eee !important;
-                    }
-                }
-            `}</style>
         </div>
     );
 }

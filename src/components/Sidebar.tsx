@@ -25,7 +25,9 @@ import {
     Building2,
     BookMarked,
     Receipt,
-    FileText
+    FileText,
+    Wrench,
+    ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -49,7 +51,9 @@ const menuSections: MenuSection[] = [
         items: [
             { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
             { icon: ShoppingCart, label: "POS / Billing", href: "/dashboard/pos", badge: "POS" },
-            { icon: Truck, label: "Purchases (Stock In)", href: "/dashboard/purchases", badge: "NEW" },
+            { icon: ClipboardList, label: "Demand Book", href: "/dashboard/demands", badge: "NEW" },
+            { icon: Wrench, label: "Repairs & Services", href: "/dashboard/repairs", badge: "M3" },
+            { icon: Truck, label: "Purchases (Stock In)", href: "/dashboard/purchases" },
         ],
     },
     {
@@ -76,6 +80,7 @@ const menuSections: MenuSection[] = [
     {
         title: "SYSTEM",
         items: [
+            { icon: Building2, label: "Store Branding", href: "/dashboard/branding" },
             { icon: ShieldCheck, label: "Admin Control", href: "/dashboard/admin", adminOnly: true },
         ],
     },
@@ -87,12 +92,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     const [loggingOut, setLoggingOut] = useState(false);
     const [user, setUser] = useState<any>(null);
 
+    const [branding, setBranding] = useState<any>(null);
+
     useEffect(() => {
         fetch("/api/auth/session")
             .then((res) => res.json())
             .then((data) => {
                 if (data.authenticated) {
                     setUser(data.user);
+                }
+            })
+            .catch(() => {});
+
+        fetch("/api/branding")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success && data.branding) {
+                    setBranding(data.branding);
                 }
             })
             .catch(() => {});
@@ -118,19 +134,30 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 <Link
                     href="/dashboard"
                     onClick={onNavigate}
-                    className="flex items-center gap-3.5 p-2 rounded-none-none hover:bg-black/[0.03] transition-all group"
+                    className="flex items-center gap-3 p-2 hover:bg-slate-100/80 transition-all group"
                 >
-                    <div className="w-11 h-11 rounded-none-none premium-gradient flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                        <Store className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform overflow-hidden p-1">
+                        {branding?.logo ? (
+                            <img
+                                src={branding.logo}
+                                alt="Logo"
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                    (e.currentTarget as any).src = "/libertycollection.png";
+                                }}
+                            />
+                        ) : (
+                            <Store className="w-5 h-5 text-blue-600" />
+                        )}
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-base font-black tracking-tight leading-tight text-foreground group-hover:text-primary transition-colors">
-                            CGS Computers
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-extrabold tracking-tight leading-tight text-foreground group-hover:text-primary transition-colors truncate">
+                            {branding?.businessName || "CGS Computers"}
                         </span>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="w-2 h-2 rounded-none-none bg-emerald-500 animate-pulse" />
-                            <span className="text-[11px] font-semibold text-foreground/50 tracking-wide uppercase">
-                                POS Terminal
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                            <span className="text-[10px] font-semibold text-foreground/50 tracking-wide uppercase truncate">
+                                {branding?.description?.slice(0, 22) || "POS & Service Hub"}
                             </span>
                         </div>
                     </div>
@@ -138,24 +165,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </div>
 
             {/* Quick POS Action CTA Button */}
-            <div className="px-5 mb-2">
+            <div className="px-5 mb-3">
                 <Link
                     href="/dashboard/pos"
                     onClick={onNavigate}
-                    className="w-full py-3 px-4 rounded-none-none bg-gradient-to-r from-primary to-accent text-white font-bold text-sm flex items-center justify-between shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all group"
+                    className="w-full py-2.5 px-4 rounded-full bg-primary text-white font-semibold text-sm flex items-center justify-between shadow-sm hover:shadow-md hover:bg-primary-hover active:scale-[0.98] transition-all group cursor-pointer"
                 >
                     <div className="flex items-center gap-2.5">
                         <Zap className="w-4 h-4 fill-white text-white group-hover:rotate-12 transition-transform" />
                         <span>Open POS Billing</span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-white/70 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-4 h-4 text-white/80 group-hover:translate-x-1 transition-transform" />
                 </Link>
             </div>
 
-            {/* Navigation Menu */}
-            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-5 custom-scrollbar">
+            {/* Navigation Menu (Material 3 Drawer Items) */}
+            <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4 custom-scrollbar">
                 {menuSections.map((section) => {
-                    // Filter admin-only if user is not admin
                     const visibleItems = section.items.filter(
                         (item) => !item.adminOnly || user?.role === "ADMIN"
                     );
@@ -164,7 +190,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
                     return (
                         <div key={section.title} className="space-y-1">
-                            <div className="px-3 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-foreground/40">
+                            <div className="px-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 {section.title}
                             </div>
                             {visibleItems.map((item) => {
@@ -177,19 +203,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                                         href={item.href}
                                         onClick={onNavigate}
                                         className={cn(
-                                            "relative flex items-center justify-between px-3.5 py-2.5 rounded-none-none text-sm font-semibold transition-all duration-200 group",
+                                            "relative flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 group cursor-pointer",
                                             isActive
-                                                ? "bg-primary/10 text-primary font-bold shadow-sm shadow-primary/5"
-                                                : "text-foreground/60 hover:text-foreground hover:bg-black/[0.03]"
+                                                ? "bg-blue-50 text-blue-700 font-semibold shadow-xs"
+                                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
                                         )}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div
                                                 className={cn(
-                                                    "p-1.5 rounded-none-none transition-colors",
+                                                    "p-1 rounded-lg transition-colors",
                                                     isActive
-                                                        ? "bg-primary text-white shadow-sm"
-                                                        : "bg-transparent text-foreground/50 group-hover:text-foreground group-hover:bg-black/5"
+                                                        ? "text-blue-700"
+                                                        : "text-slate-500 group-hover:text-slate-800"
                                                 )}
                                             >
                                                 <Icon className="w-4 h-4" />
@@ -200,18 +226,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                                         {item.badge && (
                                             <span
                                                 className={cn(
-                                                    "text-[10px] font-extrabold px-2 py-0.5 rounded-none-none uppercase tracking-wider",
+                                                    "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
                                                     isActive
-                                                        ? "bg-primary text-white"
-                                                        : "bg-primary/10 text-primary"
+                                                        ? "bg-blue-600 text-white"
+                                                        : "bg-blue-100 text-blue-700"
                                                 )}
                                             >
                                                 {item.badge}
                                             </span>
-                                        )}
-
-                                        {isActive && (
-                                            <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-none-none" />
                                         )}
                                     </Link>
                                 );
@@ -222,17 +244,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </div>
 
             {/* Sidebar User Footer */}
-            <div className="p-4 border-t border-black/5 bg-black/[0.01]">
-                <div className="flex items-center justify-between p-2.5 rounded-none-none bg-white border border-black/5 shadow-xs mb-2">
+            <div className="p-4 border-t border-slate-200/60 bg-slate-50/50">
+                <div className="flex items-center justify-between p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs mb-2.5">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-none-none premium-gradient flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
+                        <div className="w-9 h-9 rounded-xl premium-gradient flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
                             {user?.name?.[0]?.toUpperCase() || "U"}
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold text-foreground truncate leading-tight">
+                            <p className="text-xs font-bold text-slate-800 truncate leading-tight">
                                 {user?.name || "System User"}
                             </p>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary mt-0.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 mt-0.5">
                                 {user?.role || "CASHIER"}
                             </span>
                         </div>
@@ -242,11 +264,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 <button
                     onClick={handleLogout}
                     disabled={loggingOut}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-none-none text-xs font-bold text-red-500 hover:text-red-600 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-full text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200/60 hover:border-rose-200 transition-all cursor-pointer disabled:opacity-50"
                 >
                     {loggingOut ? (
                         <>
-                            <div className="w-3.5 h-3.5 border-2 border-red-500/20 border-t-red-500 rounded-none-none animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-rose-600/30 border-t-rose-600 rounded-full animate-spin" />
                             <span>Signing out...</span>
                         </>
                     ) : (
@@ -263,7 +285,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Sidebar() {
     return (
-        <aside className="hidden lg:flex flex-col h-full w-64 glass border-r border-black/5 z-30 shrink-0">
+        <aside className="hidden lg:flex flex-col h-full w-64 bg-white border-r border-slate-200/70 z-30 shrink-0 shadow-xs">
             <SidebarContent />
         </aside>
     );
@@ -276,7 +298,7 @@ export function MobileNav() {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="lg:hidden p-2.5 rounded-none-none bg-black/5 hover:bg-black/10 text-foreground transition-colors cursor-pointer"
+                className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
                 title="Open Navigation"
             >
                 <Menu className="w-5 h-5" />
@@ -285,7 +307,7 @@ export function MobileNav() {
             {/* Backdrop */}
             {open && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs lg:hidden animate-fade-in"
+                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs lg:hidden animate-fade-in"
                     onClick={() => setOpen(false)}
                 />
             )}
@@ -293,13 +315,13 @@ export function MobileNav() {
             {/* Mobile Drawer */}
             <div
                 className={cn(
-                    "fixed top-0 left-0 z-50 h-full w-72 glass border-r border-black/5 transform transition-transform duration-300 ease-in-out lg:hidden bg-white shadow-2xl flex flex-col",
+                    "fixed top-0 left-0 z-50 h-full w-72 bg-white rounded-r-3xl border-r border-slate-200/70 transform transition-transform duration-300 ease-in-out lg:hidden shadow-2xl flex flex-col",
                     open ? "translate-x-0" : "-translate-x-full"
                 )}
             >
                 <button
                     onClick={() => setOpen(false)}
-                    className="absolute top-4 right-4 p-2 rounded-none-none bg-black/5 hover:bg-black/10 text-foreground transition-colors z-10 cursor-pointer"
+                    className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors z-10 cursor-pointer"
                     title="Close Navigation"
                 >
                     <X className="w-5 h-5" />

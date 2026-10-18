@@ -61,9 +61,12 @@ model Product {
   category        Category?        @relation(fields: [categoryId], references: [id])
   brandId         String?
   brand           Brand?           @relation(fields: [brandId], references: [id])
+  supplierId      String?
+  supplier        Supplier?        @relation(fields: [supplierId], references: [id])
   saleItems       SaleItem[]
   saleReturnItems SaleReturnItem[]
   purchaseItems   PurchaseItem[]
+  demands         Demand[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -79,6 +82,8 @@ model Customer {
   returns   SaleReturn[]
   ledgers   Ledger[]
   payments  Payment[]
+  repairs   Repair[]
+  demands   Demand[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 }
@@ -188,6 +193,7 @@ model Supplier {
   address     String?
   cnic        String?
   balance     Decimal           @default(0) @db.Decimal(15, 2) // Current payable amount to supplier
+  products    Product[]
   purchases   Purchase[]
   ledgers     SupplierLedger[]
   payments    SupplierPayment[]
@@ -282,3 +288,119 @@ model Expense {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 }
+
+// ==========================================
+// REPAIRS & MAINTENANCE MANAGEMENT
+// ==========================================
+
+enum RepairStatus {
+  RECEIVED
+  DIAGNOSING
+  WAITING_FOR_PARTS
+  IN_PROGRESS
+  READY
+  DELIVERED
+  UNREPAIRABLE
+  CANCELLED
+}
+
+enum RepairPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Repair {
+  id                  String         @id @default(cuid())
+  ticketNumber        String         @unique
+  customerId          String?
+  customer            Customer?      @relation(fields: [customerId], references: [id])
+  customerName        String
+  customerPhone       String
+  customerCnic        String?
+  customerAddress     String?
+  deviceType          String         @default("Laptop") // Laptop, Desktop PC, Printer, LCD/LED, etc.
+  deviceBrand         String?
+  deviceModel         String?
+  serialNumber        String?
+  devicePassword      String?        // Password / PIN for testing
+  accessoriesIncluded String?        // Charger, Bag, Power cable, etc.
+  conditionNotes      String?        // Scratches, cracks, pre-existing damages
+  problemDescription  String         @db.Text
+  diagnosticsNotes    String?        @db.Text
+  status              RepairStatus   @default(RECEIVED)
+  priority            RepairPriority @default(NORMAL)
+  estimatedCost       Decimal        @default(0) @db.Decimal(15, 2)
+  partCost            Decimal        @default(0) @db.Decimal(15, 2)
+  laborCost           Decimal        @default(0) @db.Decimal(15, 2)
+  finalAmount         Decimal        @default(0) @db.Decimal(15, 2)
+  paidAmount          Decimal        @default(0) @db.Decimal(15, 2)
+  balance             Decimal        @default(0) @db.Decimal(15, 2)
+  paymentMethod       String?        @default("CASH")
+  technicianName      String?
+  receivedDate        DateTime       @default(now())
+  expectedDate        DateTime?
+  completedDate       DateTime?
+  deliveredDate       DateTime?
+  notes               String?        @db.Text
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+// ==========================================
+// DEMAND & PURCHASE REQUISITION MANAGEMENT
+// ==========================================
+
+enum DemandStatus {
+  PENDING
+  ORDERED
+  ARRIVED
+  FULFILLED
+  CANCELLED
+}
+
+enum DemandPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum DemandType {
+  CUSTOMER_DEMAND
+  STOCK_LOW
+  MARKET_PURCHASE
+}
+
+model Demand {
+  id            String         @id @default(cuid())
+  demandNumber  String         @unique // e.g. DMD-2026-0001
+  itemName      String
+  category      String?
+  brand         String?
+  quantity      Int            @default(1)
+  targetPrice   Decimal?       @default(0) @db.Decimal(15, 2)
+  advancePaid   Decimal?       @default(0) @db.Decimal(15, 2)
+  type          DemandType     @default(CUSTOMER_DEMAND)
+  priority      DemandPriority @default(NORMAL)
+  status        DemandStatus   @default(PENDING)
+
+  // Customer reference
+  customerId    String?
+  customer      Customer?      @relation(fields: [customerId], references: [id])
+  customerName  String?
+  customerPhone String?
+
+  // Catalog Product reference (optional)
+  productId     String?
+  product       Product?       @relation(fields: [productId], references: [id])
+
+  supplierName  String?
+  notes         String?        @db.Text
+  expectedDate  DateTime?
+  fulfilledDate DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+

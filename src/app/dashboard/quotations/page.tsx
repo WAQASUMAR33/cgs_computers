@@ -50,70 +50,105 @@ export default function QuotationsPage() {
         q.customer?.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const totalQuoteValue = quotations.reduce((sum: number, q: any) => sum + Number(q.netTotal || 0), 0);
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Quotations</h2>
-                    <p className="text-foreground/60">Manage and convert quotations to bills</p>
+                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">Quotations & Estimates</h2>
+                    <p className="text-slate-500 text-sm mt-1">Manage price estimates and convert them directly into customer sales bills.</p>
                 </div>
             </div>
 
-            <div className="rounded-none-none glass border border-black/5 p-6 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <Search className="w-5 h-5 text-foreground/40" />
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Active Quotations</p>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{quotations.length}</h3>
+                    <p className="text-xs text-slate-400 mt-1">Estimates issued</p>
+                </div>
+
+                <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Estimated Value</p>
+                    <h3 className="text-2xl font-black text-blue-600 tracking-tight">{formatCurrency(totalQuoteValue)}</h3>
+                    <p className="text-xs text-slate-400 mt-1">Cumulative quotation sum</p>
+                </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+                <div className="relative flex items-center">
+                    <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                         type="text"
-                        placeholder="Search quotations..."
-                        className="w-full bg-transparent focus:outline-none font-medium"
+                        placeholder="Search quotations by quote # or customer name..."
+                        className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 shadow-xs transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
 
-            <div className="rounded-none-none glass border border-black/5 overflow-hidden shadow-sm">
+            {/* Quotations Table */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
+                    <h3 className="font-bold uppercase tracking-wider text-xs text-slate-700">Quotations Registry</h3>
+                    <span className="text-xs font-semibold text-slate-400">{filteredQuotations.length} Found</span>
+                </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr className="border-b border-black/5 bg-black/[0.01]">
-                                <th className="px-6 py-4 text-xs font-bold text-foreground/40 uppercase tracking-widest">Quote #</th>
-                                <th className="px-6 py-4 text-xs font-bold text-foreground/40 uppercase tracking-widest">Date</th>
-                                <th className="px-6 py-4 text-xs font-bold text-foreground/40 uppercase tracking-widest">Customer</th>
-                                <th className="px-6 py-4 text-xs font-bold text-foreground/40 uppercase tracking-widest text-right">Total</th>
-                                <th className="px-6 py-4 text-xs font-bold text-foreground/40 uppercase tracking-widest text-center">Actions</th>
+                            <tr className="border-b border-slate-200/80 bg-slate-50/75">
+                                <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider">Quote #</th>
+                                <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider">Customer</th>
+                                <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider text-right">Total Amount</th>
+                                <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider text-center">Convert / Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-black/5">
+                        <tbody className="divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-20 text-center text-foreground/40">Loading...</td>
+                                    <td colSpan={5} className="px-6 py-16 text-center text-slate-400">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="w-6 h-6 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                                            <span className="text-xs font-medium">Loading quotations...</span>
+                                        </div>
+                                    </td>
                                 </tr>
                             ) : filteredQuotations.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-20 text-center text-foreground/40">No quotations found.</td>
+                                    <td colSpan={5} className="px-6 py-16 text-center text-slate-400 font-medium">
+                                        No quotations found.
+                                    </td>
                                 </tr>
                             ) : filteredQuotations.map((q: any) => (
-                                <tr key={q.id} className="hover:bg-black/[0.02]">
-                                    <td className="px-6 py-4 font-mono font-bold">{q.billNumber}</td>
-                                    <td className="px-6 py-4 text-sm">{new Date(q.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 font-medium">{q.customer?.name}</td>
-                                    <td className="px-6 py-4 text-right font-bold">{formatCurrency(q.netTotal)}</td>
+                                <tr key={q.id} className="hover:bg-slate-50/60 transition-colors">
+                                    <td className="px-6 py-4 font-mono font-bold text-blue-600">{q.billNumber}</td>
+                                    <td className="px-6 py-4 text-slate-600 font-medium">{new Date(q.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4">
+                                        <span className="font-semibold text-slate-900">{q.customer?.name || "Walk-in Customer"}</span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right font-extrabold text-slate-900 text-sm">
+                                        {formatCurrency(q.netTotal)}
+                                    </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <button
                                                 onClick={() => handleOpenInPOS(q.id)}
-                                                className="p-2 rounded-none-none bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                                                title="Open in POS"
+                                                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-all font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                                                title="Convert to Sale in POS"
                                             >
-                                                <ShoppingCart className="w-4 h-4" />
+                                                <ShoppingCart className="w-3.5 h-3.5" />
+                                                <span>Convert to Sale</span>
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(q.id)}
-                                                className="p-2 rounded-none-none bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
-                                                title="Delete"
+                                                className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                                title="Delete Quotation"
                                             >
-                                                <Trash2 className="w-4 h-4" />
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     </td>

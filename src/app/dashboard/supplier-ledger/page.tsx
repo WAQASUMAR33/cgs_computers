@@ -219,7 +219,7 @@ function SupplierLedgerContent() {
             <body>
                 <div class="header">
                     <h1>SUPPLIER LEDGER STATEMENT</h1>
-                    <p>CGS Computers • Chapai wali gali, Committee Bazar, Mandi Bahauddin</p>
+                    <p>CGS Computers • Near Post Office Mandi Bahauddin • 0343-8483919 / 0333-8483919</p>
                 </div>
 
                 <div class="supplier-info">
@@ -301,18 +301,18 @@ function SupplierLedgerContent() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
                         Supplier Ledger
                     </h2>
-                    <p className="text-foreground/60 text-sm mt-0.5">
-                        Audit supplier purchasing, payments, and payable statements.
+                    <p className="text-slate-500 text-sm mt-1">
+                        Audit supplier purchasing, settlement payments, and payable statements.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     {selectedSupplierId && (
                         <button
                             onClick={() => setIsPaymentModalOpen(true)}
-                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                         >
                             <Wallet className="w-4 h-4" />
                             <span>Record Payment</span>
@@ -321,9 +321,9 @@ function SupplierLedgerContent() {
                     <button
                         onClick={printLedger}
                         disabled={!selectedSupplierId || ledger.length === 0}
-                        className="px-5 py-2.5 glass border border-black/10 text-foreground font-bold text-xs flex items-center gap-2 hover:bg-black/5 transition-all disabled:opacity-40 shadow-xs cursor-pointer"
+                        className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center gap-2 hover:bg-slate-50 transition-all disabled:opacity-40 shadow-sm cursor-pointer active:scale-95"
                     >
-                        <Printer className="w-4 h-4" />
+                        <Printer className="w-4 h-4 text-slate-500" />
                         <span>Print Statement</span>
                     </button>
                 </div>
@@ -337,10 +337,10 @@ function SupplierLedgerContent() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         className={cn(
-                            "p-4 border flex items-center justify-between shadow-xs",
+                            "p-4 rounded-xl border flex items-center justify-between shadow-xs",
                             feedback.type === "success"
-                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800"
-                                : "bg-red-500/10 border-red-500/30 text-red-800"
+                                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                : "bg-rose-50 border-rose-200 text-rose-800"
                         )}
                     >
                         <div className="flex items-center gap-2.5 font-medium text-xs">
@@ -357,16 +357,16 @@ function SupplierLedgerContent() {
             {/* Filterable Supplier Selector */}
             <div className="flex flex-col sm:flex-row gap-4 no-print" ref={supplierContainerRef}>
                 <div className="relative flex-1 max-w-xl">
-                    <label className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em] block mb-1 pl-0.5">
+                    <label className="text-xs font-semibold text-slate-500 block mb-1.5 pl-0.5">
                         Filter & Select Supplier
                     </label>
 
                     <div className="relative flex items-center">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40 pointer-events-none" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
                             type="text"
                             placeholder="Type supplier name, company, or contact phone..."
-                            className="w-full pl-11 pr-20 py-3.5 glass border border-black/10 focus:outline-none focus:border-primary font-bold text-sm bg-white text-foreground placeholder:text-foreground/40 shadow-xs"
+                            className="w-full pl-11 pr-20 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium text-sm text-slate-900 placeholder:text-slate-400 shadow-xs transition-all"
                             value={supplierSearch}
                             onChange={(e) => {
                                 setSupplierSearch(e.target.value);
@@ -379,7 +379,7 @@ function SupplierLedgerContent() {
                             {supplierSearch && (
                                 <button
                                     onClick={handleClearSupplier}
-                                    className="p-1 text-foreground/40 hover:text-foreground cursor-pointer"
+                                    className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer rounded-md"
                                     title="Clear supplier"
                                 >
                                     <X className="w-4 h-4" />
@@ -388,7 +388,7 @@ function SupplierLedgerContent() {
                             <button
                                 type="button"
                                 onClick={() => setShowSupplierDropdown(!showSupplierDropdown)}
-                                className="p-1 text-foreground/40 hover:text-foreground cursor-pointer"
+                                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer rounded-md"
                             >
                                 <ChevronDown className={cn("w-4 h-4 transition-transform", showSupplierDropdown && "rotate-180")} />
                             </button>
@@ -403,10 +403,10 @@ function SupplierLedgerContent() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -6 }}
                                 transition={{ duration: 0.15 }}
-                                className="absolute z-40 left-0 right-0 top-full mt-1.5 bg-white border border-black/10 shadow-2xl max-h-72 overflow-y-auto divide-y divide-black/5 custom-scrollbar"
+                                className="absolute z-40 left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-72 overflow-y-auto divide-y divide-slate-100 custom-scrollbar"
                             >
                                 {filteredSuppliers.length === 0 ? (
-                                    <div className="p-5 text-center text-xs text-foreground/40 font-medium">
+                                    <div className="p-5 text-center text-xs text-slate-400 font-medium">
                                         No supplier found matching "{supplierSearch}"
                                     </div>
                                 ) : (
@@ -418,19 +418,19 @@ function SupplierLedgerContent() {
                                                 key={s.id}
                                                 onClick={() => handleSelectSupplier(s)}
                                                 className={cn(
-                                                    "p-3.5 hover:bg-primary/5 cursor-pointer flex justify-between items-center transition-colors group",
-                                                    isSelected && "bg-primary/10 font-bold"
+                                                    "p-3.5 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition-colors group",
+                                                    isSelected && "bg-blue-50/70 font-semibold"
                                                 )}
                                             >
                                                 <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                                                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
                                                         <Building2 className="w-4 h-4" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                                                        <p className="font-semibold text-sm text-slate-900 truncate group-hover:text-blue-600 transition-colors">
                                                             {s.name}
                                                         </p>
-                                                        <p className="text-xs text-foreground/40 truncate">
+                                                        <p className="text-xs text-slate-400 truncate">
                                                             {s.companyName ? `${s.companyName} • ` : ""}{s.contact}
                                                         </p>
                                                     </div>
@@ -439,10 +439,10 @@ function SupplierLedgerContent() {
                                                 <div className="text-right shrink-0 ml-3">
                                                     <span
                                                         className={cn(
-                                                            "text-xs font-black px-2.5 py-1 inline-block",
+                                                            "text-xs font-bold px-2.5 py-1 rounded-full inline-block",
                                                             hasPayable
-                                                                ? "bg-red-500/10 text-red-600 border border-red-500/20"
-                                                                : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                                         )}
                                                     >
                                                         {formatCurrency(s.balance || 0)}
@@ -462,145 +462,146 @@ function SupplierLedgerContent() {
             {selectedSupplierId ? (
                 <div className="space-y-6">
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-                        <div className="p-6 glass border border-black/5 bg-white shadow-xs">
-                            <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest mb-1">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 Supplier Profile
                             </p>
-                            <h3 className="text-lg font-black text-foreground">{selectedSupplier?.name}</h3>
+                            <h3 className="text-base font-bold text-slate-900">{selectedSupplier?.name}</h3>
                             {selectedSupplier?.companyName && (
-                                <p className="text-xs text-primary font-bold">{selectedSupplier.companyName}</p>
+                                <p className="text-xs text-blue-600 font-medium mt-0.5">{selectedSupplier.companyName}</p>
                             )}
-                            <p className="text-xs text-foreground/60 mt-1">{selectedSupplier?.contact}</p>
+                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                                <Phone className="w-3 h-3 text-slate-400" />
+                                {selectedSupplier?.contact || "No phone listed"}
+                            </p>
                         </div>
 
-                        <div className="p-6 glass border border-red-500/15 bg-white shadow-xs">
-                            <p className="text-xs font-bold text-red-600 uppercase tracking-widest mb-1">
+                        <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 Total Purchases (Credit)
                             </p>
-                            <h3 className="text-2xl font-black text-red-600">{formatCurrency(totalBilled)}</h3>
-                            <p className="text-[10px] text-red-600/60 mt-1 uppercase font-bold">Invoiced Stock</p>
+                            <h3 className="text-2xl font-black text-rose-600 tracking-tight">{formatCurrency(totalBilled)}</h3>
+                            <p className="text-xs text-slate-400 mt-1">Invoiced Stock Total</p>
                         </div>
 
-                        <div className="p-6 glass border border-emerald-500/15 bg-white shadow-xs">
-                            <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1">
+                        <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                                 Total Paid (Debit)
                             </p>
-                            <h3 className="text-2xl font-black text-emerald-600">{formatCurrency(totalPaid)}</h3>
-                            <p className="text-[10px] text-emerald-600/60 mt-1 uppercase font-bold">Payments Cleared</p>
+                            <h3 className="text-2xl font-black text-emerald-600 tracking-tight">{formatCurrency(totalPaid)}</h3>
+                            <p className="text-xs text-slate-400 mt-1">Payments Settled</p>
                         </div>
 
-                        <div className="p-6 glass border border-blue-500/15 bg-white shadow-xs">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">
-                                        Current Payable Balance
-                                    </p>
-                                    <h3 className="text-2xl font-black text-foreground">
-                                        {formatCurrency(selectedSupplier?.balance || 0)}
-                                    </h3>
-                                    <p className="text-[10px] text-primary/70 mt-1 uppercase font-bold">
-                                        Net Pending Payment
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => setIsPaymentModalOpen(true)}
-                                    className="p-2 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer"
-                                    title="Pay Supplier"
-                                >
-                                    <PlusCircle className="w-5 h-5" />
-                                </button>
+                        <div className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                    Current Payable Balance
+                                </p>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                    {formatCurrency(selectedSupplier?.balance || 0)}
+                                </h3>
+                                <p className="text-xs text-rose-600 font-semibold mt-1">
+                                    Pending Balance
+                                </p>
                             </div>
+                            <button
+                                onClick={() => setIsPaymentModalOpen(true)}
+                                className="p-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-xl transition-all cursor-pointer shadow-xs"
+                                title="Pay Supplier"
+                            >
+                                <PlusCircle className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
 
                     {/* Statement Table */}
-                    <div className="glass border border-black/5 overflow-hidden shadow-xs bg-white">
-                        <div className="p-6 border-b border-black/5 bg-black/[0.01] flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <Calendar className="w-5 h-5 text-primary" />
-                                <h3 className="font-bold uppercase tracking-widest text-xs text-foreground">
+                    <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/50 flex justify-between items-center">
+                            <div className="flex items-center gap-2.5">
+                                <Calendar className="w-4 h-4 text-blue-600" />
+                                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
                                     Statement of Account
                                 </h3>
                             </div>
-                            <div className="text-[10px] font-black text-foreground/40 italic">
-                                Generated on {new Date().toLocaleString()}
+                            <div className="text-xs text-slate-400 font-medium">
+                                Generated on {new Date().toLocaleDateString()}
                             </div>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse text-xs">
                                 <thead>
-                                    <tr className="border-b border-black/5 bg-black/[0.01]">
-                                        <th className="px-6 py-4 font-black text-foreground/40 uppercase tracking-widest">
+                                    <tr className="border-b border-slate-200/80 bg-slate-50/75">
+                                        <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider">
                                             Date
                                         </th>
-                                        <th className="px-6 py-4 font-black text-foreground/40 uppercase tracking-widest">
+                                        <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider">
                                             Description / Ref
                                         </th>
-                                        <th className="px-6 py-4 font-black text-foreground/40 uppercase tracking-widest text-right">
+                                        <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider text-right">
                                             Debit (Paid)
                                         </th>
-                                        <th className="px-6 py-4 font-black text-foreground/40 uppercase tracking-widest text-right">
+                                        <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider text-right">
                                             Credit (Purchased)
                                         </th>
-                                        <th className="px-6 py-4 font-black text-foreground/40 uppercase tracking-widest text-right">
+                                        <th className="px-6 py-3.5 font-bold text-slate-500 uppercase tracking-wider text-right">
                                             Running Balance
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-black/5">
+                                <tbody className="divide-y divide-slate-100">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-20 text-center text-foreground/40 italic">
+                                            <td colSpan={5} className="px-6 py-16 text-center text-slate-400">
                                                 <div className="flex flex-col items-center gap-3">
-                                                    <div className="w-8 h-8 border-3 border-primary/30 border-t-primary rounded-none animate-spin" />
-                                                    <span>Loading supplier ledger...</span>
+                                                    <div className="w-7 h-7 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                                                    <span className="text-xs font-medium">Loading supplier ledger...</span>
                                                 </div>
                                             </td>
                                         </tr>
                                     ) : ledger.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-20 text-center text-foreground/40">
+                                            <td colSpan={5} className="px-6 py-16 text-center text-slate-400 font-medium">
                                                 No ledger transactions found for this supplier.
                                             </td>
                                         </tr>
                                     ) : (
                                         ledger.map((entry: any) => (
-                                            <tr key={entry.id} className="hover:bg-black/[0.01] transition-colors">
-                                                <td className="px-6 py-4 text-foreground/60 font-medium">
+                                            <tr key={entry.id} className="hover:bg-slate-50/60 transition-colors">
+                                                <td className="px-6 py-4 text-slate-600 font-medium">
                                                     {new Date(entry.date).toLocaleDateString()}
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <p className="font-bold text-foreground">{entry.description}</p>
+                                                    <p className="font-semibold text-slate-900">{entry.description}</p>
                                                     {entry.purchase && (
-                                                        <span className="text-[10px] text-primary uppercase font-bold mt-0.5 block">
+                                                        <span className="text-[11px] text-blue-600 font-medium mt-0.5 block">
                                                             Invoice: {entry.purchase.invoiceNumber}
                                                         </span>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     {Number(entry.debit) > 0 ? (
-                                                        <div className="flex items-center justify-end gap-1.5 text-emerald-600 font-bold">
+                                                        <div className="flex items-center justify-end gap-1 text-emerald-700 font-bold">
                                                             <span>{formatCurrency(entry.debit)}</span>
-                                                            <ArrowDownLeft className="w-3 h-3" />
+                                                            <ArrowDownLeft className="w-3.5 h-3.5" />
                                                         </div>
                                                     ) : (
-                                                        "—"
+                                                        <span className="text-slate-300">—</span>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     {Number(entry.credit) > 0 ? (
-                                                        <div className="flex items-center justify-end gap-1.5 text-red-600 font-bold">
+                                                        <div className="flex items-center justify-end gap-1 text-rose-600 font-bold">
                                                             <span>{formatCurrency(entry.credit)}</span>
-                                                            <ArrowUpRight className="w-3 h-3" />
+                                                            <ArrowUpRight className="w-3.5 h-3.5" />
                                                         </div>
                                                     ) : (
-                                                        "—"
+                                                        <span className="text-slate-300">—</span>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <span className="font-black text-foreground px-3 py-1 bg-black/5 border border-black/5">
+                                                    <span className="font-bold text-slate-900 px-2.5 py-1 bg-slate-100 rounded-lg inline-block">
                                                         {formatCurrency(entry.balance)}
                                                     </span>
                                                 </td>
@@ -613,9 +614,10 @@ function SupplierLedgerContent() {
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-32 border border-dashed border-black/10 bg-black/[0.01] text-foreground/40">
-                    <BookOpen className="w-14 h-14 mb-4 stroke-[1.5]" />
-                    <p className="text-base font-bold">Select a supplier above to view their financial statement & transaction history.</p>
+                <div className="flex flex-col items-center justify-center py-24 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 text-slate-400">
+                    <BookOpen className="w-12 h-12 mb-3 stroke-[1.5] text-slate-300" />
+                    <p className="text-sm font-semibold text-slate-600">Select a supplier above to view their financial ledger</p>
+                    <p className="text-xs text-slate-400 mt-1">Track purchases, payables, and settlement vouchers.</p>
                 </div>
             )}
 
@@ -628,45 +630,45 @@ function SupplierLedgerContent() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsPaymentModalOpen(false)}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 15 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                            className="relative w-full max-w-md glass border border-black/5 p-6 md:p-8 shadow-2xl bg-white space-y-4"
+                            className="relative w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-2xl space-y-5"
                         >
-                            <div className="flex justify-between items-center border-b border-black/5 pb-3">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 bg-emerald-500/10 text-emerald-600">
+                            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl">
                                         <Wallet className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className="text-base font-bold text-foreground">Record Supplier Payment</h3>
-                                        <p className="text-xs text-foreground/50">{selectedSupplier?.name}</p>
+                                        <h3 className="text-base font-bold text-slate-900">Record Supplier Payment</h3>
+                                        <p className="text-xs text-slate-500 font-medium">{selectedSupplier?.name}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setIsPaymentModalOpen(false)} className="p-1 text-foreground/40 hover:text-foreground cursor-pointer">
+                                <button onClick={() => setIsPaymentModalOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-600 cursor-pointer rounded-lg hover:bg-slate-100">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
 
-                            <div className="p-3 bg-red-500/5 border border-red-500/10 flex justify-between items-center text-xs">
-                                <span className="font-medium text-foreground/60">Current Outstanding Payable:</span>
-                                <span className="font-black text-red-600">{formatCurrency(selectedSupplier?.balance || 0)}</span>
+                            <div className="p-3.5 bg-rose-50 border border-rose-100 rounded-xl flex justify-between items-center text-xs">
+                                <span className="font-medium text-rose-700">Current Outstanding Payable:</span>
+                                <span className="font-extrabold text-rose-700">{formatCurrency(selectedSupplier?.balance || 0)}</span>
                             </div>
 
                             <form onSubmit={handleRecordPayment} className="space-y-4 text-xs">
                                 <div>
-                                    <label className="font-bold text-foreground/70 block mb-1">
-                                        Payment Amount (RS) <span className="text-red-500">*</span>
+                                    <label className="font-semibold text-slate-700 block mb-1.5">
+                                        Payment Amount (RS) <span className="text-rose-500">*</span>
                                     </label>
                                     <input
                                         type="number"
                                         required
                                         min="1"
                                         placeholder="Enter amount to pay..."
-                                        className="w-full px-3 py-2.5 text-sm font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                        className="w-full px-3.5 py-2.5 text-sm font-semibold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 shadow-xs"
                                         value={paymentAmount}
                                         onChange={(e) => setPaymentAmount(e.target.value)}
                                     />
@@ -674,22 +676,22 @@ function SupplierLedgerContent() {
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="font-bold text-foreground/70 block mb-1">
+                                        <label className="font-semibold text-slate-700 block mb-1.5">
                                             Payment Date
                                         </label>
                                         <input
                                             type="date"
-                                            className="w-full px-3 py-2 font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                            className="w-full px-3.5 py-2 font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 shadow-xs"
                                             value={paymentDate}
                                             onChange={(e) => setPaymentDate(e.target.value)}
                                         />
                                     </div>
                                     <div>
-                                        <label className="font-bold text-foreground/70 block mb-1">
+                                        <label className="font-semibold text-slate-700 block mb-1.5">
                                             Payment Method
                                         </label>
                                         <select
-                                            className="w-full px-3 py-2 font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                            className="w-full px-3.5 py-2 font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 shadow-xs"
                                             value={paymentMethod}
                                             onChange={(e) => setPaymentMethod(e.target.value)}
                                         >
@@ -702,13 +704,13 @@ function SupplierLedgerContent() {
                                 </div>
 
                                 <div>
-                                    <label className="font-bold text-foreground/70 block mb-1">
+                                    <label className="font-semibold text-slate-700 block mb-1.5">
                                         Payment Remarks / Note
                                     </label>
                                     <textarea
                                         rows={2}
                                         placeholder="e.g. Paid via Meezan Bank Cheque #4421..."
-                                        className="w-full px-3 py-2 font-bold border border-black/10 focus:outline-none focus:border-primary bg-white text-foreground"
+                                        className="w-full px-3.5 py-2 font-medium border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white text-slate-900 shadow-xs"
                                         value={paymentRemarks}
                                         onChange={(e) => setPaymentRemarks(e.target.value)}
                                     />
@@ -718,18 +720,18 @@ function SupplierLedgerContent() {
                                     <button
                                         type="button"
                                         onClick={() => setIsPaymentModalOpen(false)}
-                                        className="px-4 py-2 bg-black/5 hover:bg-black/10 font-bold text-foreground/70 transition-all cursor-pointer"
+                                        className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition-all cursor-pointer"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={isSubmittingPayment}
-                                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
                                     >
                                         {isSubmittingPayment ? (
                                             <>
-                                                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-none animate-spin" />
+                                                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                                                 <span>Saving...</span>
                                             </>
                                         ) : (

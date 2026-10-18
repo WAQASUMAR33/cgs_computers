@@ -12,6 +12,7 @@ export async function GET(
             include: {
                 category: true,
                 brand: true,
+                supplier: true,
             },
         });
         return NextResponse.json(product);
@@ -27,17 +28,32 @@ export async function PUT(
     try {
         const { id } = await params;
         const json = await request.json();
+        const updateData: any = {
+            code: json.code,
+            name: json.name,
+            costPrice: json.costPrice,
+            wholesalePrice: json.wholesalePrice,
+            retailPrice: json.retailPrice,
+            stock: parseInt(json.stock),
+        };
+
+        if (json.categoryId !== undefined) {
+            updateData.category = json.categoryId ? { connect: { id: json.categoryId } } : { disconnect: true };
+        }
+        if (json.supplierId !== undefined) {
+            updateData.supplier = json.supplierId ? { connect: { id: json.supplierId } } : { disconnect: true };
+        }
+        if (json.brandId !== undefined) {
+            updateData.brand = json.brandId ? { connect: { id: json.brandId } } : { disconnect: true };
+        }
+
         const product = await prisma.product.update({
             where: { id },
-            data: {
-                code: json.code,
-                name: json.name,
-                costPrice: json.costPrice,
-                wholesalePrice: json.wholesalePrice,
-                retailPrice: json.retailPrice,
-                stock: parseInt(json.stock),
-                categoryId: json.categoryId || null,
-                brandId: json.brandId || null,
+            data: updateData,
+            include: {
+                category: true,
+                brand: true,
+                supplier: true,
             },
         });
         return NextResponse.json(product);

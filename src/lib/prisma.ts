@@ -28,6 +28,13 @@ const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClientSingleton | undefined;
 };
 
+if (globalForPrisma.prisma && !(globalForPrisma.prisma as any).demand) {
+    try {
+        globalForPrisma.prisma.$disconnect();
+    } catch {}
+    globalForPrisma.prisma = undefined;
+}
+
 const prisma = (globalForPrisma.prisma ?? prismaClientSingleton()) as any;
 
 export default prisma;
