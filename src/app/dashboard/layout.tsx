@@ -26,14 +26,20 @@ import {
     Receipt,
     FileText,
     Wrench,
-    ClipboardList
+    ClipboardList,
+    Cpu,
+    ShieldAlert,
+    ArrowLeft,
 } from "lucide-react";
+import { isRouteAllowed, getRoleBadge, ROLE_DEFINITIONS } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 
 const pageMeta: Record<string, { label: string; icon: any; desc: string }> = {
     "/dashboard": { label: "Dashboard", icon: LayoutDashboard, desc: "Executive business summary" },
     "/dashboard/pos": { label: "POS / Billing", icon: ShoppingCart, desc: "Point of sale & invoicing" },
     "/dashboard/demands": { label: "Item Demand Book", icon: ClipboardList, desc: "Customer special demands, low stock alerts & market requisitions" },
     "/dashboard/repairs": { label: "Repairs & Maintenance", icon: Wrench, desc: "Device repair tickets, diagnostic logs & claim receipts" },
+    "/dashboard/spare-parts": { label: "Spare Parts Stock", icon: Cpu, desc: "Spare parts inventory, stock tracking & component movements" },
     "/dashboard/purchases": { label: "Purchases (Stock In)", icon: Truck, desc: "Supplier stock-in & purchase bills" },
     "/dashboard/products": { label: "Products", icon: Package, desc: "Inventory & catalog" },
     "/dashboard/categories": { label: "Categories", icon: Layers, desc: "Product categorization" },
@@ -56,6 +62,7 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const [user, setUser] = useState<any>(null);
+    const [sessionLoading, setSessionLoading] = useState(true);
     const [branding, setBranding] = useState<any>(null);
     const [currentTime, setCurrentTime] = useState<string>("");
     const [currentDate, setCurrentDate] = useState<string>("");
@@ -70,7 +77,8 @@ export default function DashboardLayout({
                     setUser(data.user);
                 }
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => setSessionLoading(false));
 
         // Fetch branding
         fetch("/api/branding")
@@ -112,6 +120,9 @@ export default function DashboardLayout({
         desc: "Management console",
     };
     const PageIcon = currentPage.icon;
+    const roleBadge = getRoleBadge(user?.role);
+    const allowed = user ? isRouteAllowed(user.role, pathname) : true;
+    const canAccessPOS = isRouteAllowed(user?.role, "/dashboard/pos");
 
     return (
         <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
@@ -157,8 +168,8 @@ export default function DashboardLayout({
                             </div>
                         </div>
 
-                        {/* POS Quick Button in Header (if not on POS page) */}
-                        {pathname !== "/dashboard/pos" && (
+                        {/* POS Quick Button in Header (if user role is permitted and not currently on POS page) */}
+                        {canAccessPOS && pathname !== "/dashboard/pos" && (
                             <Link
                                 href="/dashboard/pos"
                                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold shadow-xs hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
@@ -168,19 +179,30 @@ export default function DashboardLayout({
                             </Link>
                         )}
 
-                        {/* User Profile Pill */}
+                        {/* User Profile Pill with Role-based Badge */}
                         <div className="flex items-center gap-3 pl-2 sm:pl-3 sm:border-l sm:border-slate-200/80">
                             <div className="flex flex-col items-end hidden sm:flex">
                                 <span className="text-xs font-bold text-slate-900 leading-tight">
-                                    {user?.name || "Loading..."}
+                                    {user?.name || (sessionLoading ? "Authenticating..." : "System User")}
                                 </span>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full mt-0.5">
-                                    {user?.role || "CASHIER"}
+                                <span className={cn(
+                                    "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border mt-0.5",
+                                    roleBadge.badgeBg,
+                                    roleBadge.badgeColor,
+                                    roleBadge.badgeBorder
+                                )}>
+                                    {roleBadge.name}
                                 </span>
                             </div>
                             <div className="w-10 h-10 rounded-full premium-gradient p-[2px] shadow-xs shrink-0">
                                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                                    <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
+                                    <div className={cn(
+                                        "w-full h-full flex items-center justify-center text-white font-bold text-sm",
+                                        user?.role === "ADMIN" ? "bg-purple-600" :
+                                        user?.role === "TECHNICIAN" ? "bg-amber-600" :
+                                        user?.role === "ACCOUNTANT" ? "bg-blue-600" :
+                                        "bg-emerald-600"
+                                    )}>
                                         {user?.name?.[0]?.toUpperCase() || "U"}
                                     </div>
                                 </div>
@@ -192,7 +214,53 @@ export default function DashboardLayout({
                 {/* Viewport Content */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative custom-scrollbar">
                     <div className="max-w-7xl mx-auto space-y-6">
-                        {children}
+                        {!sessionLoading && user && !allowed ? (
+                            /* Access Restricted Notice */
+                            <div className="bg-white border border-rose-200 rounded-3xl p-8 md:p-12 shadow-sm text-center max-w-2xl mx-auto my-12 space-y-6">
+                                <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto text-rose-600">
+                                    <ShieldAlert className="w-8 h-8" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h2 className="text-2xl font-black text-slate-900">Access Restricted</h2>
+                                    <p className="text-slate-500 text-sm">
+                                        Your account role <span className="font-bold text-slate-800">({roleBadge.name})</span> is not authorized to access the <span className="font-semibold text-slate-800">{currentPage.label}</span> module.
+                                    </p>
+                                    <p className="text-xs text-slate-400">
+                                        Please contact your system Administrator if you need permission for this module.
+                                    </p>
+                                </div>
+
+                                <div className="pt-4 flex flex-wrap gap-3 justify-center">
+                                    <Link
+                                        href="/dashboard"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-sm"
+                                    >
+                                        <ArrowLeft className="w-4 h-4" />
+                                        <span>Back to Dashboard</span>
+                                    </Link>
+                                    {isRouteAllowed(user.role, "/dashboard/pos") && (
+                                        <Link
+                                            href="/dashboard/pos"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all shadow-sm"
+                                        >
+                                            <ShoppingCart className="w-4 h-4" />
+                                            <span>Go to POS / Billing</span>
+                                        </Link>
+                                    )}
+                                    {isRouteAllowed(user.role, "/dashboard/repairs") && (
+                                        <Link
+                                            href="/dashboard/repairs"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-all shadow-sm"
+                                        >
+                                            <Wrench className="w-4 h-4" />
+                                            <span>Go to Repairs</span>
+                                        </Link>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            children
+                        )}
                     </div>
                 </div>
             </main>

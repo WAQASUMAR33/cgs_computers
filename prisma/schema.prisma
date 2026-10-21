@@ -9,6 +9,9 @@ datasource db {
 
 enum Role {
   ADMIN
+  SALESMAN
+  TECHNICIAN
+  ACCOUNTANT
   CASHIER
 }
 
@@ -28,7 +31,7 @@ model User {
   username  String   @unique
   password  String
   name      String
-  role      Role     @default(CASHIER)
+  role      Role     @default(SALESMAN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -402,5 +405,60 @@ model Demand {
   fulfilledDate DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+}
+
+// ==========================================
+// SPARE PARTS MANAGEMENT (STOCK RECORDS)
+// ==========================================
+
+enum SparePartCondition {
+  NEW
+  USED
+  REFURBISHED
+  PULL
+}
+
+enum SparePartLogType {
+  STOCK_IN
+  STOCK_OUT
+  USED_IN_REPAIR
+  ADJUSTMENT
+  RETURNED
+  SCRAP
+}
+
+model SparePart {
+  id               String             @id @default(cuid())
+  partNumber       String             @unique // e.g. SP-1001, Part No, Barcode
+  name             String
+  category         String             // Screens, Batteries, Keyboards, Motherboards, RAM, Storage, Fans, Adapters, Hinges, etc.
+  brand            String?            // Dell, HP, Lenovo, Asus, Apple, Acer, Universal
+  compatibleModels String?            // e.g. "Inspiron 3511, 3520, Latitude 5400"
+  location         String?            // Rack A, Shelf 2, Drawer 4
+  stock            Int                @default(0)
+  minStockAlert    Int                @default(2)
+  costPrice        Decimal            @default(0) @db.Decimal(15, 2)
+  sellingPrice     Decimal            @default(0) @db.Decimal(15, 2)
+  condition        SparePartCondition @default(NEW)
+  supplierName     String?
+  warranty         String?            // e.g. "3 Months", "Check Warranty", "No Warranty"
+  notes            String?            @db.Text
+  logs             SparePartLog[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model SparePartLog {
+  id            String           @id @default(cuid())
+  sparePartId   String
+  sparePart     SparePart        @relation(fields: [sparePartId], references: [id], onDelete: Cascade)
+  type          SparePartLogType @default(STOCK_IN)
+  quantity      Int              // Quantity added or deducted
+  previousStock Int
+  newStock      Int
+  reference     String?          // e.g. Repair Ticket #, PO #, Invoice #
+  performedBy   String?          // Technician or Admin username
+  notes         String?
+  createdAt     DateTime         @default(now())
 }
 

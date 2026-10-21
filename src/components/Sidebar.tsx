@@ -27,10 +27,12 @@ import {
     Receipt,
     FileText,
     Wrench,
-    ClipboardList
+    ClipboardList,
+    Cpu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { isRouteAllowed, getRoleBadge } from "@/lib/permissions";
 
 interface MenuItem {
     icon: any;
@@ -53,6 +55,7 @@ const menuSections: MenuSection[] = [
             { icon: ShoppingCart, label: "POS / Billing", href: "/dashboard/pos", badge: "POS" },
             { icon: ClipboardList, label: "Demand Book", href: "/dashboard/demands", badge: "NEW" },
             { icon: Wrench, label: "Repairs & Services", href: "/dashboard/repairs", badge: "M3" },
+            { icon: Cpu, label: "Spare Parts Stock", href: "/dashboard/spare-parts", badge: "STOCK" },
             { icon: Truck, label: "Purchases (Stock In)", href: "/dashboard/purchases" },
         ],
     },
@@ -127,6 +130,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         }
     };
 
+    const roleBadge = getRoleBadge(user?.role);
+    const canAccessPOS = isRouteAllowed(user?.role, "/dashboard/pos");
+
     return (
         <div className="flex flex-col h-full text-foreground select-none">
             {/* Branding Header */}
@@ -164,27 +170,31 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 </Link>
             </div>
 
-            {/* Quick POS Action CTA Button */}
-            <div className="px-5 mb-3">
-                <Link
-                    href="/dashboard/pos"
-                    onClick={onNavigate}
-                    className="w-full py-2.5 px-4 rounded-full bg-primary text-white font-semibold text-sm flex items-center justify-between shadow-sm hover:shadow-md hover:bg-primary-hover active:scale-[0.98] transition-all group cursor-pointer"
-                >
-                    <div className="flex items-center gap-2.5">
-                        <Zap className="w-4 h-4 fill-white text-white group-hover:rotate-12 transition-transform" />
-                        <span>Open POS Billing</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-white/80 group-hover:translate-x-1 transition-transform" />
-                </Link>
-            </div>
+            {/* Quick POS Action CTA Button (only for roles allowed POS) */}
+            {canAccessPOS && (
+                <div className="px-5 mb-3">
+                    <Link
+                        href="/dashboard/pos"
+                        onClick={onNavigate}
+                        className="w-full py-2.5 px-4 rounded-full bg-primary text-white font-semibold text-sm flex items-center justify-between shadow-sm hover:shadow-md hover:bg-primary-hover active:scale-[0.98] transition-all group cursor-pointer"
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <Zap className="w-4 h-4 fill-white text-white group-hover:rotate-12 transition-transform" />
+                            <span>Open POS Billing</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/80 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                </div>
+            )}
 
-            {/* Navigation Menu (Material 3 Drawer Items) */}
+            {/* Navigation Menu (Filtered by User Role & Permissions) */}
             <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4 custom-scrollbar">
                 {menuSections.map((section) => {
-                    const visibleItems = section.items.filter(
-                        (item) => !item.adminOnly || user?.role === "ADMIN"
-                    );
+                    // Filter items: must be allowed for the user's role
+                    const visibleItems = section.items.filter((item) => {
+                        if (!user) return !item.adminOnly;
+                        return isRouteAllowed(user.role, item.href);
+                    });
 
                     if (visibleItems.length === 0) return null;
 
@@ -247,15 +257,26 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <div className="p-4 border-t border-slate-200/60 bg-slate-50/50">
                 <div className="flex items-center justify-between p-2.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs mb-2.5">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-xl premium-gradient flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs">
+                        <div className={cn(
+                            "w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-xs",
+                            user?.role === "ADMIN" ? "bg-gradient-to-br from-purple-600 to-indigo-600" :
+                            user?.role === "TECHNICIAN" ? "bg-gradient-to-br from-amber-500 to-orange-600" :
+                            user?.role === "ACCOUNTANT" ? "bg-gradient-to-br from-blue-600 to-cyan-600" :
+                            "bg-gradient-to-br from-emerald-600 to-teal-600"
+                        )}>
                             {user?.name?.[0]?.toUpperCase() || "U"}
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-slate-800 truncate leading-tight">
                                 {user?.name || "System User"}
                             </p>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 mt-0.5">
-                                {user?.role || "CASHIER"}
+                            <span className={cn(
+                                "inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border mt-0.5",
+                                roleBadge.badgeBg,
+                                roleBadge.badgeColor,
+                                roleBadge.badgeBorder
+                            )}>
+                                {roleBadge.name}
                             </span>
                         </div>
                     </div>

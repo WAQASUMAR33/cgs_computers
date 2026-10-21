@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { createHash } from "crypto";
+import { cookies } from "next/headers";
+
+async function checkAdmin() {
+    try {
+        const cookieStore = await cookies();
+        const sessionCookie = cookieStore.get("session");
+        if (!sessionCookie) return false;
+        const session = JSON.parse(sessionCookie.value);
+        return session && session.role === "ADMIN";
+    } catch {
+        return false;
+    }
+}
 
 // GET single user
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -32,15 +45,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 // PUT update user
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const isAdmin = await checkAdmin();
+        if (!isAdmin) {
+            return NextResponse.json({ error: "Unauthorized: Administrator access required" }, { status: 403 });
+        }
+
         const { id } = await params;
         const body = await request.json();
         const { username, password, name, role } = body;
 
-        const updateData: any = {
-            username,
-            name,
-            role,
-        };
+        const updateData: any = {};
+        if (username) updateData.username = username.trim();
+        if (name) updateData.name = name.trim();
+
+        if (role) {
+            const validRoles = ["ADMIN", "SALESMAN", "TECHNICIAN", "ACCOUNTANT", "CASHIER"];
+            if (validRoles.includes(role.toUpperCase())) {
+                updateData.role = role.toUpperCase();
+            }
+        }
 
         // Only update password if provided
         if (password && password.trim() !== "") {
@@ -69,7 +92,22 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 // DELETE user
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const isAdmin = await checkAdmin();
+        if (!isAdmin) {
+            return NextResponse.json({ error: "Unauthorized: Administrator access required" }, { status: 403 });
+        }
+
         const { id } = await params;
+
+        // Prevent deleting the last admin
+        const targetUser = await prisma.user.findUnique({ where: { id } });
+        if (targetUser?.role === "ADMIN") {
+            const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+            if (adminCount <= 1) {
+                return NextResponse.json({ error: "Cannot delete the only administrator account." }, { status: 400 });
+            }
+        }
+
         await prisma.user.delete({
             where: { id },
         });

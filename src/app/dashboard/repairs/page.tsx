@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import {
     Wrench,
@@ -727,6 +728,15 @@ export default function RepairsPage() {
                         >
                             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
                         </button>
+
+                        {/* Spare Parts Stock Shortcut */}
+                        <Link
+                            href="/dashboard/spare-parts"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white font-bold text-xs backdrop-blur-md border border-white/20 transition-all cursor-pointer"
+                        >
+                            <Cpu className="w-4 h-4 text-amber-300" />
+                            <span>Spare Parts Stock</span>
+                        </Link>
 
                         {/* Primary New Ticket Button */}
                         <button

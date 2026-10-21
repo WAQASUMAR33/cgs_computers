@@ -317,6 +317,119 @@ export async function GET() {
             };
         }).sort((a: any, b: any) => b.totalStock - a.totalStock);
 
+        // --- Additional Multi-Role Operational Stats ---
+        let repairStats = {
+            totalRepairs: 0,
+            activeRepairs: 0,
+            waitingForParts: 0,
+            readyForDelivery: 0,
+            recentRepairs: [] as any[],
+        };
+
+        try {
+            const [totalRepairs, activeRepairs, waitingForParts, readyForDelivery, recentRepairs] = await Promise.all([
+                prisma.repair.count(),
+                prisma.repair.count({
+                    where: { status: { in: ["RECEIVED", "DIAGNOSING", "WAITING_FOR_PARTS", "IN_PROGRESS"] } },
+                }),
+                prisma.repair.count({ where: { status: "WAITING_FOR_PARTS" } }),
+                prisma.repair.count({ where: { status: "READY" } }),
+                prisma.repair.findMany({
+                    take: 6,
+                    orderBy: { createdAt: "desc" },
+                }),
+            ]);
+            repairStats = { totalRepairs, activeRepairs, waitingForParts, readyForDelivery, recentRepairs };
+        } catch (e) {
+            console.error("Repair stats query error:", e);
+        }
+
+        let sparePartStats = {
+            totalVarieties: 0,
+            totalStockUnits: 0,
+            lowStockCount: 0,
+            lowStockSpareParts: [] as any[],
+        };
+
+        try {
+            const [allSpareParts, lowStockParts] = await Promise.all([
+                prisma.sparePart.findMany({ select: { stock: true, minStockAlert: true } }),
+                prisma.sparePart.findMany({
+                    where: { stock: { lte: 2 } },
+                    take: 5,
+                    orderBy: { stock: "asc" },
+                }),
+            ]);
+            const totalStockUnits = allSpareParts.reduce((acc: number, p: any) => acc + (p.stock || 0), 0);
+            const lowStockCount = allSpareParts.filter((p: any) => (p.stock || 0) <= (p.minStockAlert || 2)).length;
+            sparePartStats = {
+                totalVarieties: allSpareParts.length,
+                totalStockUnits,
+                lowStockCount,
+                lowStockSpareParts: lowStockParts,
+            };
+        } catch (e) {
+            console.error("Spare part stats query error:", e);
+        }
+
+        let financialStats = {
+            totalExpenses: 0,
+            thisMonthExpenses: 0,
+            supplierPayables: 0,
+            totalPurchases: 0,
+            recentExpenses: [] as any[],
+            recentPurchases: [] as any[],
+        };
+
+        try {
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const [totalExp, monthExp, supPay, totPurch, recExp, recPurch] = await Promise.all([
+                prisma.expense.aggregate({ _sum: { amount: true } }),
+                prisma.expense.aggregate({ where: { date: { gte: firstDayOfMonth } }, _sum: { amount: true } }),
+                prisma.supplier.aggregate({ _sum: { balance: true } }),
+                prisma.purchase.aggregate({ _sum: { netTotal: true } }),
+                prisma.expense.findMany({
+                    take: 6,
+                    orderBy: { date: "desc" },
+                    include: { category: { select: { name: true } } },
+                }),
+                prisma.purchase.findMany({
+                    take: 6,
+                    orderBy: { date: "desc" },
+                    include: { supplier: { select: { name: true, companyName: true } } },
+                }),
+            ]);
+
+            financialStats = {
+                totalExpenses: Number(totalExp._sum.amount || 0),
+                thisMonthExpenses: Number(monthExp._sum.amount || 0),
+                supplierPayables: Number(supPay._sum.balance || 0),
+                totalPurchases: Number(totPurch._sum.netTotal || 0),
+                recentExpenses: recExp,
+                recentPurchases: recPurch,
+            };
+        } catch (e) {
+            console.error("Financial stats query error:", e);
+        }
+
+        let demandStats = {
+            pendingCount: 0,
+            recentDemands: [] as any[],
+        };
+
+        try {
+            const [pendingCount, recentDemands] = await Promise.all([
+                prisma.demand.count({ where: { status: "PENDING" } }),
+                prisma.demand.findMany({
+                    take: 6,
+                    orderBy: { createdAt: "desc" },
+                }),
+            ]);
+            demandStats = { pendingCount, recentDemands };
+        } catch (e) {
+            console.error("Demand stats query error:", e);
+        }
+
         return NextResponse.json({
             stats: {
                 totalSales: Number(salesData._sum.netTotal || 0),
@@ -334,6 +447,10 @@ export async function GET() {
             recentSales,
             topProducts: topProductsEnriched,
             lowStockProducts,
+            repairStats,
+            sparePartStats,
+            financialStats,
+            demandStats,
             analytics: {
                 last7Days,
                 last30Days,
@@ -351,3 +468,4 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
     }
 }
+
