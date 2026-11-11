@@ -84,6 +84,9 @@ export async function GET() {
         // 8. Top selling products based on sale items
         const topProducts = await prisma.saleItem.groupBy({
             by: ["productId"],
+            where: {
+                productId: { not: null },
+            },
             _sum: {
                 quantity: true,
                 subtotal: true,

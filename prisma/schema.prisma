@@ -110,16 +110,16 @@ model Sale {
 }
 
 model SaleItem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   saleId    String
-  sale      Sale    @relation(fields: [saleId], references: [id])
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  name      String  @default("") // Custom product name at the time of sale
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name      String   @default("") // Custom product name at the time of sale
   quantity  Int
-  price     Decimal @db.Decimal(10, 2)
-  discount  Decimal @default(0) @db.Decimal(10, 2)
-  subtotal  Decimal @db.Decimal(15, 2)
+  price     Decimal  @db.Decimal(10, 2)
+  discount  Decimal  @default(0) @db.Decimal(10, 2)
+  subtotal  Decimal  @db.Decimal(15, 2)
 }
 
 model SaleReturn {
@@ -140,15 +140,15 @@ model SaleReturn {
 }
 
 model SaleReturnItem {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   saleReturnId String
-  saleReturn   SaleReturn @relation(fields: [saleReturnId], references: [id], onDelete: Cascade)
-  productId    String
-  product      Product    @relation(fields: [productId], references: [id])
-  name         String     @default("")
+  saleReturn   SaleReturn  @relation(fields: [saleReturnId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name         String      @default("")
   quantity     Int
-  price        Decimal    @db.Decimal(10, 2)
-  subtotal     Decimal    @db.Decimal(15, 2)
+  price        Decimal     @db.Decimal(10, 2)
+  subtotal     Decimal     @db.Decimal(15, 2)
 }
 
 model Ledger {
@@ -226,8 +226,8 @@ model PurchaseItem {
   id          String   @id @default(cuid())
   purchaseId  String
   purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   name        String   @default("")
   quantity    Int
   costPrice   Decimal  @db.Decimal(10, 2)
@@ -397,7 +397,7 @@ model Demand {
 
   // Catalog Product reference (optional)
   productId     String?
-  product       Product?       @relation(fields: [productId], references: [id])
+  product       Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   supplierName  String?
   notes         String?        @db.Text

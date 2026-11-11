@@ -80,13 +80,20 @@ export default function ProductsPage() {
         fetchSuppliers();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this product?")) return;
+    const handleDelete = async (id: string, name?: string) => {
+        if (!confirm(`Are you sure you want to delete product ${name ? `"${name}"` : ""}?`)) return;
         try {
-            await fetch(`/api/products/${id}`, { method: "DELETE" });
-            fetchProducts();
+            const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+            const data = await res.json();
+            if (res.ok) {
+                setProducts(prev => prev.filter(p => p.id !== id));
+                fetchProducts();
+            } else {
+                alert(data.error || "Failed to delete product");
+            }
         } catch (error) {
-            console.error(error);
+            console.error("Delete error:", error);
+            alert("Network error: Failed to delete product");
         }
     };
 
@@ -294,7 +301,7 @@ export default function ProductsPage() {
                                                     <Edit className="w-3.5 h-3.5" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(product.id)}
+                                                    onClick={() => handleDelete(product.id, product.name)}
                                                     className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-all cursor-pointer border border-slate-200/60"
                                                     title="Delete Product"
                                                 >

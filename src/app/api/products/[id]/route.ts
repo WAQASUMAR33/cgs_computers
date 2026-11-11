@@ -68,11 +68,41 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params;
-        await prisma.product.delete({
+
+        const product = await prisma.product.findUnique({
             where: { id },
         });
-        return NextResponse.json({ message: "Product deleted" });
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
+
+        if (!product) {
+            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        }
+
+        // Safely detach relations before deletion to preserve invoice/bill history
+        await prisma.$transaction([
+            prisma.saleItem.updateMany({
+                where: { productId: id },
+                data: { productId: null },
+            }),
+            prisma.saleReturnItem.updateMany({
+                where: { productId: id },
+                data: { productId: null },
+            }),
+            prisma.purchaseItem.updateMany({
+                where: { productId: id },
+                data: { productId: null },
+            }),
+            prisma.demand.updateMany({
+                where: { productId: id },
+                data: { productId: null },
+            }),
+            prisma.product.delete({
+                where: { id },
+            }),
+        ]);
+
+        return NextResponse.json({ success: true, message: "Product deleted successfully" });
+    } catch (error: any) {
+        console.error("Failed to delete product:", error);
+        return NextResponse.json({ error: error.message || "Failed to delete product" }, { status: 500 });
     }
 }
