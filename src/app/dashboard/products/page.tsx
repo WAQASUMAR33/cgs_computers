@@ -18,7 +18,10 @@ import {
     CheckCircle2,
     X,
     Tag,
-    Layers
+    Layers,
+    Printer,
+    FileText,
+    Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -33,8 +36,10 @@ export default function ProductsPage() {
     const [selectedCategory, setSelectedCategory] = useState("ALL");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
+    const [isPrintStockModalOpen, setIsPrintStockModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any>(null);
     const [barcodeProduct, setBarcodeProduct] = useState<any>(null);
+    const [branding, setBranding] = useState<any>(null);
 
     const fetchProducts = async () => {
         try {
@@ -78,6 +83,14 @@ export default function ProductsPage() {
     useEffect(() => {
         fetchCategories();
         fetchSuppliers();
+        fetch("/api/branding")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data?.success && data?.branding) {
+                    setBranding(data.branding);
+                }
+            })
+            .catch(() => {});
     }, []);
 
     const handleDelete = async (id: string, name?: string) => {
@@ -118,6 +131,14 @@ export default function ProductsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2.5">
+                    <button
+                        onClick={() => setIsPrintStockModalOpen(true)}
+                        className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-xs flex items-center gap-2 hover:bg-slate-50 transition-all text-slate-700 shadow-xs cursor-pointer"
+                        title="Print stock inventory list and valuation report"
+                    >
+                        <Printer className="w-4 h-4 text-emerald-600" />
+                        <span>Print Stock List</span>
+                    </button>
                     <button
                         onClick={() => { setBarcodeProduct(null); setIsBarcodeModalOpen(true); }}
                         className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 font-bold text-xs flex items-center gap-2 hover:bg-slate-50 transition-all text-slate-700 shadow-xs cursor-pointer"
@@ -333,7 +354,663 @@ export default function ProductsPage() {
                         product={barcodeProduct}
                     />
                 )}
+                {isPrintStockModalOpen && (
+                    <PrintStockModal
+                        onClose={() => setIsPrintStockModalOpen(false)}
+                        products={products}
+                        filteredProducts={filteredProducts}
+                        categories={categories}
+                        branding={branding}
+                        activeCategory={selectedCategory}
+                        activeSearch={search}
+                    />
+                )}
             </AnimatePresence>
+        </div>
+    );
+}
+
+function PrintStockModal({
+    onClose,
+    products,
+    filteredProducts,
+    categories,
+    branding,
+    activeCategory,
+    activeSearch,
+}: {
+    onClose: () => void;
+    products: any[];
+    filteredProducts: any[];
+    categories: any[];
+    branding: any;
+    activeCategory: string;
+    activeSearch: string;
+}) {
+    const hasActiveFilter = activeCategory !== "ALL" || (activeSearch && activeSearch.trim() !== "");
+    const [scope, setScope] = useState<"filtered" | "all">(hasActiveFilter ? "filtered" : "all");
+    const [selectedCatId, setSelectedCatId] = useState<string>("ALL");
+    const [stockFilter, setStockFilter] = useState<"ALL" | "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK">("ALL");
+    const [includeCost, setIncludeCost] = useState(true);
+    const [includeWholesale, setIncludeWholesale] = useState(true);
+    const [includeRetail, setIncludeRetail] = useState(true);
+    const [customTitle, setCustomTitle] = useState("INVENTORY STOCK & VALUATION REPORT");
+
+    // Base products selection
+    const baseList = scope === "filtered" ? filteredProducts : products;
+
+    // Apply modal-level category and stock filters
+    const printList = baseList.filter((p) => {
+        if (selectedCatId !== "ALL" && p.categoryId !== selectedCatId) return false;
+        const s = Number(p.stock) || 0;
+        if (stockFilter === "IN_STOCK" && s <= 0) return false;
+        if (stockFilter === "LOW_STOCK" && (s > 10 || s <= 0)) return false;
+        if (stockFilter === "OUT_OF_STOCK" && s > 0) return false;
+        return true;
+    });
+
+    const totalItems = printList.length;
+    const totalUnits = printList.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
+    const totalCostVal = printList.reduce((sum, p) => sum + ((Number(p.stock) || 0) * (Number(p.costPrice) || 0)), 0);
+    const totalRetailVal = printList.reduce((sum, p) => sum + ((Number(p.stock) || 0) * (Number(p.retailPrice) || 0)), 0);
+    const potentialMargin = totalRetailVal - totalCostVal;
+
+    const handlePrint = () => {
+        const printWindow = window.open("", "_blank", "width=1050,height=850");
+        if (!printWindow) {
+            alert("Popup blocked! Please allow popups for this site to print.");
+            return;
+        }
+
+        const bizName = branding?.businessName || "CGS COMPUTERS";
+        const bizAddress = branding?.address || "Near Post Office, Mandi Bahauddin";
+        const bizPhones = branding?.phoneNumbers || "0343-8483919 / 0333-8483919";
+        const printTime = new Date().toLocaleString("en-PK", {
+            dateStyle: "medium",
+            timeStyle: "short",
+        });
+
+        // Current filter description
+        const categoryLabel = selectedCatId === "ALL"
+            ? (scope === "filtered" && activeCategory !== "ALL"
+                ? (categories.find((c) => c.id === activeCategory)?.name || "Current Category")
+                : "All Categories")
+            : (categories.find((c) => c.id === selectedCatId)?.name || "Selected Category");
+
+        const stockFilterLabel = stockFilter === "IN_STOCK"
+            ? "In-Stock Only (> 0 units)"
+            : stockFilter === "LOW_STOCK"
+                ? "Low Stock (1 - 10 units)"
+                : stockFilter === "OUT_OF_STOCK"
+                    ? "Out of Stock (0 units)"
+                    : "All Stock Items";
+
+        printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${customTitle} - ${bizName}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 8mm 8mm 10mm 8mm;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #0f172a;
+            margin: 0;
+            padding: 0;
+            font-size: 10.5px;
+            line-height: 1.3;
+            background: #fff;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .biz-title {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            margin: 0;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+        .biz-sub {
+            font-size: 10px;
+            color: #475569;
+            margin: 2px 0 0 0;
+            font-weight: 600;
+        }
+        .report-meta-box {
+            text-align: right;
+        }
+        .report-title {
+            font-size: 14px;
+            font-weight: 900;
+            color: #1e3a8a;
+            margin: 0;
+            letter-spacing: 0.2px;
+            text-transform: uppercase;
+        }
+        .meta-text {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+        .kpi-label {
+            font-size: 8.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #475569;
+        }
+        .kpi-val {
+            font-size: 14px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-top: 2px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+        thead {
+            display: table-header-group;
+        }
+        th {
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 5px 6px;
+            border: 1px solid #0f172a;
+            text-align: left;
+        }
+        td {
+            padding: 4px 6px;
+            font-size: 9.5px;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        tr {
+            page-break-inside: avoid;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .font-bold { font-weight: 700; }
+        .font-black { font-weight: 900; }
+        .stock-badge {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 9999px;
+            font-weight: 800;
+            font-size: 8.5px;
+        }
+        .badge-out { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge-low { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .badge-ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .summary-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+            page-break-inside: avoid;
+        }
+        .summary-card {
+            width: 340px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #f8fafc;
+            padding: 8px 12px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2.5px 0;
+            font-size: 10px;
+            color: #334155;
+        }
+        .summary-row.grand {
+            border-top: 2px solid #0f172a;
+            margin-top: 5px;
+            padding-top: 5px;
+            font-size: 12px;
+            font-weight: 900;
+            color: #0f172a;
+        }
+        .sig-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+        .sig-box {
+            border-top: 1px dashed #64748b;
+            padding-top: 5px;
+            text-align: center;
+            font-size: 9.5px;
+            font-weight: 700;
+            color: #475569;
+        }
+        .footer-note {
+            margin-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            color: #94a3b8;
+        }
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            button { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1 class="biz-title">${bizName}</h1>
+            <p class="biz-sub">${bizAddress} • Tel: ${bizPhones}</p>
+        </div>
+        <div class="report-meta-box">
+            <h2 class="report-title">${customTitle}</h2>
+            <div class="meta-text">Category: <strong>${categoryLabel}</strong> • Filter: <strong>${stockFilterLabel}</strong></div>
+            <div class="meta-text">Printed on: <strong>${printTime}</strong></div>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Catalog Products</div>
+            <div class="kpi-val">${totalItems} Items</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Total Stock Units</div>
+            <div class="kpi-val">${totalUnits} Units</div>
+        </div>
+        ${includeCost ? `
+        <div class="kpi-card">
+            <div class="kpi-label">Total Stock Value (Cost)</div>
+            <div class="kpi-val" style="color: #059669;">Rs. ${totalCostVal.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        ` : ''}
+        ${includeRetail ? `
+        <div class="kpi-card">
+            <div class="kpi-label">Total Retail Value</div>
+            <div class="kpi-val" style="color: #2563eb;">Rs. ${totalRetailVal.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        ` : ''}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 28px;" class="text-center">#</th>
+                <th style="width: 75px;">Code</th>
+                <th>Product Name</th>
+                <th style="width: 105px;">Category</th>
+                <th style="width: 95px;">Supplier / Brand</th>
+                ${includeCost ? '<th style="width: 80px;" class="text-right">Cost Price</th>' : ''}
+                ${includeWholesale ? '<th style="width: 80px;" class="text-right">Wholesale</th>' : ''}
+                ${includeRetail ? '<th style="width: 80px;" class="text-right">Retail Price</th>' : ''}
+                <th style="width: 75px;" class="text-center">Stock</th>
+                ${includeCost ? '<th style="width: 90px;" class="text-right">Stock Valuation</th>' : ''}
+                ${includeRetail && !includeCost ? '<th style="width: 90px;" class="text-right">Retail Valuation</th>' : ''}
+            </tr>
+        </thead>
+        <tbody>
+            ${printList.map((p, idx) => {
+                const stockVal = Number(p.stock) || 0;
+                const costPrice = Number(p.costPrice) || 0;
+                const wholesalePrice = Number(p.wholesalePrice || p.retailPrice) || 0;
+                const retailPrice = Number(p.retailPrice) || 0;
+                const itemCostVal = stockVal * costPrice;
+                const itemRetailVal = stockVal * retailPrice;
+
+                let badgeClass = "badge-ok";
+                let badgeLabel = `${stockVal} in stock`;
+                if (stockVal <= 0) {
+                    badgeClass = "badge-out";
+                    badgeLabel = "0 (Out)";
+                } else if (stockVal <= 10) {
+                    badgeClass = "badge-low";
+                    badgeLabel = `${stockVal} (Low)`;
+                }
+
+                return `
+                <tr>
+                    <td class="text-center font-mono" style="color: #64748b;">${idx + 1}</td>
+                    <td class="font-mono font-bold" style="color: #1e40af;">${p.code || "—"}</td>
+                    <td class="font-bold">${p.name}</td>
+                    <td>${p.category?.name || "—"}</td>
+                    <td>${p.supplier?.name || p.brand?.name || "—"}</td>
+                    ${includeCost ? `<td class="text-right font-mono">Rs. ${costPrice.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+                    ${includeWholesale ? `<td class="text-right font-mono font-bold">Rs. ${wholesalePrice.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+                    ${includeRetail ? `<td class="text-right font-mono font-bold" style="color: #1e3a8a;">Rs. ${retailPrice.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+                    <td class="text-center">
+                        <span class="stock-badge ${badgeClass}">${badgeLabel}</span>
+                    </td>
+                    ${includeCost ? `<td class="text-right font-mono font-black" style="color: #059669;">Rs. ${itemCostVal.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+                    ${includeRetail && !includeCost ? `<td class="text-right font-mono font-black" style="color: #2563eb;">Rs. ${itemRetailVal.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+                </tr>
+                `;
+            }).join("")}
+        </tbody>
+    </table>
+
+    <div class="summary-wrapper">
+        <div class="summary-card">
+            <div class="summary-row">
+                <span>Total Items Listed:</span>
+                <strong>${totalItems} Products</strong>
+            </div>
+            <div class="summary-row">
+                <span>Total Physical Units:</span>
+                <strong>${totalUnits} Units</strong>
+            </div>
+            ${includeCost ? `
+            <div class="summary-row">
+                <span>Total Stock Investment (Cost):</span>
+                <strong style="color: #059669;">Rs. ${totalCostVal.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            ` : ''}
+            ${includeRetail ? `
+            <div class="summary-row">
+                <span>Potential Retail Revenue:</span>
+                <strong style="color: #2563eb;">Rs. ${totalRetailVal.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            ` : ''}
+            ${includeCost && includeRetail ? `
+            <div class="summary-row grand">
+                <span>Expected Gross Margin:</span>
+                <span style="color: #059669;">Rs. ${potentialMargin.toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            ` : ''}
+        </div>
+    </div>
+
+    <div class="sig-section">
+        <div class="sig-box">Physical Count Done By</div>
+        <div class="sig-box">Inventory Auditor / Accountant</div>
+        <div class="sig-box">Store Manager / Proprietor</div>
+    </div>
+
+    <div class="footer-note">
+        <span>Official Inventory Document • ${bizName}</span>
+        <span>Generated by RAPIDTECHPRO POS Suite</span>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+                window.close();
+            };
+        };
+    </script>
+</body>
+</html>`);
+        printWindow.document.close();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                className="relative w-full max-w-xl rounded-3xl bg-white border border-slate-200 p-6 md:p-8 overflow-hidden shadow-2xl z-10 max-h-[90vh] flex flex-col"
+            >
+                {/* Header */}
+                <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <Printer className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900">Print Inventory Stock List</h3>
+                            <p className="text-xs text-slate-500">Configure report scope, pricing columns and print sheet</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Form Options */}
+                <div className="space-y-4 text-xs overflow-y-auto pr-1 flex-1 custom-scrollbar">
+                    {/* Scope Selector */}
+                    <div>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                            Report Scope
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setScope("all")}
+                                className={cn(
+                                    "p-2.5 rounded-xl border text-left font-semibold transition-all cursor-pointer flex flex-col gap-0.5",
+                                    scope === "all"
+                                        ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600"
+                                        : "border-slate-200 bg-slate-50 hover:bg-white text-slate-700"
+                                )}
+                            >
+                                <span className="font-bold text-xs">All Catalog Products</span>
+                                <span className="text-[11px] text-slate-500">{products.length} total items</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setScope("filtered")}
+                                className={cn(
+                                    "p-2.5 rounded-xl border text-left font-semibold transition-all cursor-pointer flex flex-col gap-0.5",
+                                    scope === "filtered"
+                                        ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600"
+                                        : "border-slate-200 bg-slate-50 hover:bg-white text-slate-700"
+                                )}
+                            >
+                                <span className="font-bold text-xs flex items-center justify-between">
+                                    <span>Current View</span>
+                                    {hasActiveFilter && (
+                                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-200 text-emerald-900 font-bold">Filtered</span>
+                                    )}
+                                </span>
+                                <span className="text-[11px] text-slate-500">{filteredProducts.length} items currently visible</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Filter by Category & Stock Status */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                Category
+                            </label>
+                            <select
+                                value={selectedCatId}
+                                onChange={(e) => setSelectedCatId(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium text-slate-900 text-xs"
+                            >
+                                <option value="ALL">All Categories</option>
+                                {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                                Stock Filter
+                            </label>
+                            <select
+                                value={stockFilter}
+                                onChange={(e) => setStockFilter(e.target.value as any)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-medium text-slate-900 text-xs"
+                            >
+                                <option value="ALL">All Stock Statuses</option>
+                                <option value="IN_STOCK">In-Stock Items Only (&gt; 0)</option>
+                                <option value="LOW_STOCK">Low Stock Alert (&le; 10 units)</option>
+                                <option value="OUT_OF_STOCK">Out of Stock Only (0 units)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Columns to Include */}
+                    <div>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                            Pricing Columns & Valuation
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <label className={cn(
+                                "flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer select-none transition-all",
+                                includeCost ? "bg-emerald-50/50 border-emerald-300 text-emerald-950" : "bg-slate-50 border-slate-200 text-slate-600"
+                            )}>
+                                <input
+                                    type="checkbox"
+                                    checked={includeCost}
+                                    onChange={(e) => setIncludeCost(e.target.checked)}
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                                />
+                                <div className="text-[11px] leading-tight">
+                                    <span className="font-bold block">Cost & Value</span>
+                                    <span className="text-[10px] text-slate-400">Owner audit</span>
+                                </div>
+                            </label>
+
+                            <label className={cn(
+                                "flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer select-none transition-all",
+                                includeWholesale ? "bg-emerald-50/50 border-emerald-300 text-emerald-950" : "bg-slate-50 border-slate-200 text-slate-600"
+                            )}>
+                                <input
+                                    type="checkbox"
+                                    checked={includeWholesale}
+                                    onChange={(e) => setIncludeWholesale(e.target.checked)}
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                                />
+                                <div className="text-[11px] leading-tight">
+                                    <span className="font-bold block">Wholesale Price</span>
+                                    <span className="text-[10px] text-slate-400">Bulk sales</span>
+                                </div>
+                            </label>
+
+                            <label className={cn(
+                                "flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer select-none transition-all",
+                                includeRetail ? "bg-emerald-50/50 border-emerald-300 text-emerald-950" : "bg-slate-50 border-slate-200 text-slate-600"
+                            )}>
+                                <input
+                                    type="checkbox"
+                                    checked={includeRetail}
+                                    onChange={(e) => setIncludeRetail(e.target.checked)}
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                                />
+                                <div className="text-[11px] leading-tight">
+                                    <span className="font-bold block">Retail Price</span>
+                                    <span className="text-[10px] text-slate-400">Counter price</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Report Header Title */}
+                    <div>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                            Report Title (Header)
+                        </label>
+                        <input
+                            type="text"
+                            value={customTitle}
+                            onChange={(e) => setCustomTitle(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-semibold text-slate-900 text-xs"
+                            placeholder="e.g. INVENTORY STOCK & VALUATION REPORT"
+                        />
+                    </div>
+
+                    {/* Summary KPI Banner Preview */}
+                    <div className="p-3.5 rounded-2xl bg-slate-900 text-white space-y-2">
+                        <div className="flex justify-between items-center text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                            <span>Print Preview Summary</span>
+                            <span className="text-emerald-400">{totalItems} Products</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-800">
+                            <div>
+                                <span className="block text-[10px] text-slate-400">Products</span>
+                                <span className="font-extrabold text-sm text-white">{totalItems}</span>
+                            </div>
+                            <div>
+                                <span className="block text-[10px] text-slate-400">Stock Units</span>
+                                <span className="font-extrabold text-sm text-white">{totalUnits}</span>
+                            </div>
+                            <div>
+                                <span className="block text-[10px] text-slate-400">Cost Valuation</span>
+                                <span className="font-extrabold text-xs text-emerald-400">
+                                    {includeCost ? formatCurrency(totalCostVal) : "Hidden"}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-[10px] text-slate-400">Retail Valuation</span>
+                                <span className="font-extrabold text-xs text-blue-400">
+                                    {includeRetail ? formatCurrency(totalRetailVal) : "Hidden"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handlePrint}
+                        disabled={totalItems === 0}
+                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                        <Printer className="w-4 h-4" />
+                        <span>Print Stock List ({totalItems})</span>
+                    </button>
+                </div>
+            </motion.div>
         </div>
     );
 }
