@@ -196,11 +196,6 @@ export default function LoginPage() {
         }
     };
 
-    const fillCredentials = (user: string, pass: string) => {
-        setFormData({ username: user, password: pass });
-        setLoginError("");
-    };
-
     return (
         <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-col lg:flex-row overflow-x-hidden selection:bg-blue-600 selection:text-white">
             
@@ -423,39 +418,6 @@ export default function LoginPage() {
                                 )}
                             </button>
                         </form>
-
-                        {/* Demo / Quick Credentials Helper */}
-                        <div className="p-3.5 rounded-xl bg-slate-100/80 border border-slate-200/80 space-y-2">
-                            <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
-                                Quick Operator Login (Click to Fill):
-                            </span>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                <button
-                                    type="button"
-                                    onClick={() => fillCredentials("admin", "admin123")}
-                                    className="p-2 rounded-lg bg-white hover:bg-blue-50/60 border border-slate-200 text-left transition hover:border-blue-300 cursor-pointer group"
-                                >
-                                    <span className="block font-bold text-slate-800 text-xs group-hover:text-blue-600">
-                                        Administrator
-                                    </span>
-                                    <span className="font-mono text-[11px] text-slate-500">
-                                        admin / admin123
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => fillCredentials("admin", "admin")}
-                                    className="p-2 rounded-lg bg-white hover:bg-blue-50/60 border border-slate-200 text-left transition hover:border-blue-300 cursor-pointer group"
-                                >
-                                    <span className="block font-bold text-slate-800 text-xs group-hover:text-blue-600">
-                                        Standard Admin
-                                    </span>
-                                    <span className="font-mono text-[11px] text-slate-500">
-                                        admin / admin
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
 
                     </div>
                 </div>
